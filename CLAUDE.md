@@ -17,28 +17,36 @@
 
 1. **Update Documentation** - Keep `docs/` files in sync with any architectural or CI/CD changes
 2. **Write/Update Tests** - Every feature must have corresponding tests
-3. **Run All Tests Before Committing** - Unit, integration, and E2E tests must pass
+3. **Run Lint** - ESLint and Prettier must pass
+4. **Run All Tests Before Committing** - Unit, integration, and E2E tests must pass
 
-### Testing Requirements
+### Pre-Commit Checklist
 
 For any new feature or bug fix, you MUST:
 
-1. **Write Unit Tests**
+1. **Run Linting**
+   ```bash
+   npx eslint .                           # Run ESLint
+   npx prettier --check "**/*.{js,jsx,json}"  # Check Prettier formatting
+   npx prettier --write "**/*.{js,jsx,json}"  # Fix Prettier formatting
+   ```
+
+2. **Write Unit Tests**
    - Server: Add tests in `server/tests/`
    - Client: Add tests in component files (`*.test.jsx`)
 
-2. **Run Unit Tests**
+3. **Run Unit Tests**
    ```bash
    cd server && npm test       # Server unit tests
    cd client && npm test       # Client unit tests
    ```
 
-3. **Run E2E Tests with Playwright**
+4. **Run E2E Tests with Playwright**
    ```bash
    npm run test:e2e            # Run Playwright E2E tests
    ```
 
-4. **Use Playwright MCP for Interactive Testing**
+5. **Use Playwright MCP for Interactive Testing**
    - Use the `mcp__playwright__*` tools to interactively test the application
    - Navigate to pages, click elements, fill forms, and verify behavior
    - Example workflow:
@@ -72,6 +80,10 @@ For any new feature or bug fix, you MUST:
 # Development
 cd server && npm run dev    # Start server with hot reload
 cd client && npm run dev    # Start Vite dev server
+
+# Linting
+npx eslint .                # Run ESLint
+npx prettier --write .      # Format with Prettier
 
 # Unit Testing
 cd server && npm test       # Run server tests
