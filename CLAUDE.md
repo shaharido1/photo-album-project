@@ -77,9 +77,9 @@ For any new feature or bug fix, you MUST:
 ## Key Commands
 
 ```bash
-# Development
-cd server && npm run dev    # Start server with hot reload
-cd client && npm run dev    # Start Vite dev server
+# Development (without Docker)
+npm run dev                 # Run both server & client with hot reload
+# → Frontend: http://localhost:5173 | Backend: http://localhost:3001
 
 # Linting
 npx eslint .                # Run ESLint

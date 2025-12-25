@@ -24,4 +24,13 @@ describe('API Routes', () => {
       expect(response.body.timestamp).toBeDefined();
     });
   });
+
+  describe('GET /api/foo', () => {
+    it('should return foo value', async () => {
+      const response = await request(app).get('/api/foo');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ value: 'foo' });
+    });
+  });
 });
