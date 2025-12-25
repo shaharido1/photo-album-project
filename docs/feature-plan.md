@@ -44,7 +44,7 @@ All UI components must:
 - [ ] Import from Google Photos (OAuth)
 - [x] Photo library grid view with thumbnails
 - [x] Select multiple photos for album
-- [ ] Delete/remove photos from library
+- [x] Delete/remove photos from library
 
 ### 2. Album Setup
 
