@@ -15,7 +15,9 @@ app.use(express.json());
 
 app.use('/api', apiRoutes);
 
-const clientBuildPath = path.join(__dirname, '../../client/dist');
+const clientBuildPath = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, '../client/dist')
+  : path.join(__dirname, '../../client/dist');
 app.use(express.static(clientBuildPath));
 
 app.get('*', (_req, res) => {
