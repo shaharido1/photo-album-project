@@ -6,9 +6,6 @@ test.describe('Full Stack App E2E Tests', () => {
   }) => {
     await page.goto('/');
 
-    // Should show loading state initially
-    const loadingText = page.getByText('Loading...');
-
     // Wait for the greeting to appear (API response)
     const greeting = page.getByRole('heading', { name: 'Hello World' });
     await expect(greeting).toBeVisible({ timeout: 10000 });
