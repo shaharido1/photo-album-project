@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchFoo, selectFoo, selectFooStatus, selectFooError } from './fooSlice';
+import {
+  fetchFoo,
+  selectFoo,
+  selectFooStatus,
+  selectFooError,
+} from './fooSlice';
 
 function Foo() {
   const dispatch = useDispatch();
