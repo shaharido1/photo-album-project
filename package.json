@@ -12,6 +12,8 @@
     "test": "npm --prefix server run test && npm --prefix client run test",
     "test:server": "npm --prefix server run test",
     "test:client": "npm --prefix client run test",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
     "lint": "eslint . --ext .js,.jsx",
     "lint:fix": "eslint . --ext .js,.jsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,json,md}\"",
@@ -25,5 +27,8 @@
     "docker"
   ],
   "author": "Ido Shahar",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
 }
