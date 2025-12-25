@@ -65,4 +65,22 @@ test.describe('Full Stack App E2E Tests', () => {
       timeout: 10000,
     });
   });
+
+  test('should have API version endpoint working', async ({ request }) => {
+    const response = await request.get('http://localhost:3001/api/version');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.version).toBeDefined();
+    expect(body.version).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  test('should display version in UI', async ({ page }) => {
+    await page.goto('/');
+
+    // Wait for version to appear (API response)
+    await expect(page.getByText(/^v\d+\.\d+\.\d+/)).toBeVisible({
+      timeout: 10000,
+    });
+  });
 });

@@ -33,4 +33,15 @@ describe('API Routes', () => {
       expect(response.body).toEqual({ value: 'foo' });
     });
   });
+
+  describe('GET /api/version', () => {
+    it('should return version from package.json', async () => {
+      const response = await request(app).get('/api/version');
+
+      expect(response.status).toBe(200);
+      expect(response.body.version).toBeDefined();
+      expect(typeof response.body.version).toBe('string');
+      expect(response.body.version).toMatch(/^\d+\.\d+\.\d+/);
+    });
+  });
 });
