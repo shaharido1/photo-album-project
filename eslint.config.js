@@ -6,7 +6,12 @@ import globals from 'globals';
 export default [
   js.configs.recommended,
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+    ],
   },
   {
     files: ['**/*.{js,jsx}'],
