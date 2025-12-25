@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createSelector, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 import type {
   Album,
@@ -17,6 +17,8 @@ import type {
   PageSlot,
   SelectedSlotRef,
   LayoutTemplateRefs,
+  ViewMode,
+  SpreadInfo,
 } from '@/types';
 
 // Simple UUID generator
@@ -113,6 +115,8 @@ const initialState: AlbumState = {
     currentPageIndex: 0,
   },
   selectedSlot: null,
+  viewMode: 'book',
+  currentSpread: 0,
   status: 'idle',
   error: null,
 };
@@ -257,8 +261,59 @@ const albumSlice = createSlice({
     clearAlbum: (state) => {
       state.album = initialState.album;
       state.selectedSlot = null;
+      state.viewMode = 'book';
+      state.currentSpread = 0;
       state.status = 'idle';
       state.error = null;
+    },
+
+    // View mode actions
+    setViewMode: (state, action: PayloadAction<ViewMode>) => {
+      state.viewMode = action.payload;
+      // When switching to edit mode, sync currentPageIndex with the spread
+      if (action.payload === 'edit') {
+        const pages = state.album.pages;
+        if (state.currentSpread === 0) {
+          // Cover page
+          state.album.currentPageIndex = 0;
+        } else {
+          // Spread pages: spread 1 = pages 1-2, spread 2 = pages 3-4, etc.
+          const leftPageIndex = state.currentSpread * 2 - 1;
+          if (leftPageIndex < pages.length) {
+            state.album.currentPageIndex = leftPageIndex;
+          }
+        }
+      }
+    },
+
+    setCurrentSpread: (state, action: PayloadAction<number>) => {
+      const spreadIndex = action.payload;
+      const maxSpread = Math.ceil((state.album.pages.length - 1) / 2);
+      if (spreadIndex >= 0 && spreadIndex <= maxSpread) {
+        state.currentSpread = spreadIndex;
+      }
+    },
+
+    nextSpread: (state) => {
+      const maxSpread = Math.ceil((state.album.pages.length - 1) / 2);
+      if (state.currentSpread < maxSpread) {
+        state.currentSpread += 1;
+      }
+    },
+
+    prevSpread: (state) => {
+      if (state.currentSpread > 0) {
+        state.currentSpread -= 1;
+      }
+    },
+
+    // Switch to edit mode for a specific page
+    editPage: (state, action: PayloadAction<number>) => {
+      const pageIndex = action.payload;
+      if (pageIndex >= 0 && pageIndex < state.album.pages.length) {
+        state.viewMode = 'edit';
+        state.album.currentPageIndex = pageIndex;
+      }
     },
   },
 });
@@ -279,6 +334,11 @@ export const {
   updateSlotRotation,
   selectSlot,
   clearAlbum,
+  setViewMode,
+  setCurrentSpread,
+  nextSpread,
+  prevSpread,
+  editPage,
 } = albumSlice.actions;
 
 // Selectors
@@ -299,5 +359,50 @@ export const selectSelectedSlot = (state: RootState): SelectedSlotRef | null =>
   state.album.selectedSlot;
 export const selectAlbumStatus = (state: RootState): AlbumState['status'] =>
   state.album.status;
+
+// View mode selectors
+export const selectViewMode = (state: RootState): ViewMode =>
+  state.album.viewMode;
+export const selectCurrentSpread = (state: RootState): number =>
+  state.album.currentSpread;
+
+// Get the pages for the current spread (memoized)
+export const selectSpreadInfo = createSelector(
+  [selectPages, selectCurrentSpread],
+  (pages, spreadIndex): SpreadInfo => {
+    if (spreadIndex === 0) {
+      // Cover page (first page alone)
+      return {
+        spreadIndex: 0,
+        leftPage: pages[0] || null,
+        rightPage: null,
+        leftPageIndex: pages.length > 0 ? 0 : null,
+        rightPageIndex: null,
+        isCover: true,
+      };
+    }
+
+    // Regular spreads: spread 1 = pages 1-2, spread 2 = pages 3-4, etc.
+    const leftPageIndex = spreadIndex * 2 - 1;
+    const rightPageIndex = spreadIndex * 2;
+
+    return {
+      spreadIndex,
+      leftPage: pages[leftPageIndex] || null,
+      rightPage: pages[rightPageIndex] || null,
+      leftPageIndex: leftPageIndex < pages.length ? leftPageIndex : null,
+      rightPageIndex: rightPageIndex < pages.length ? rightPageIndex : null,
+      isCover: false,
+    };
+  }
+);
+
+// Get total number of spreads
+export const selectTotalSpreads = (state: RootState): number => {
+  const pageCount = state.album.album.pages.length;
+  if (pageCount === 0) return 0;
+  // First page is cover (spread 0), then pairs: (pageCount - 1) / 2 rounded up
+  return 1 + Math.ceil((pageCount - 1) / 2);
+};
 
 export default albumSlice.reducer;

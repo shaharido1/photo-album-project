@@ -3,9 +3,21 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import apiRoutes from './routes/api.js';
+import { initializeFirebase } from './config/firebase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase Admin SDK
+try {
+  initializeFirebase();
+  // eslint-disable-next-line no-console
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  // eslint-disable-next-line no-console
+  console.warn('Firebase initialization skipped:', (error as Error).message);
+  // Don't exit - allow server to run without Firebase for development/testing
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;

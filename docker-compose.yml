@@ -10,6 +10,10 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
+      # Firebase Admin SDK (optional - server works without it)
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
     volumes:
       - ./server/src:/app/src
     command: node --watch src/index.js
@@ -22,6 +26,13 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      # Firebase Client SDK (optional - for Google Sign-In)
+      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY:-}
+      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN:-}
+      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID:-}
+      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET:-}
+      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID:-}
     volumes:
       - ./client/src:/app/src
       - ./client/index.html:/app/index.html

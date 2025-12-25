@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 import type { Photo, PhotosState } from '@/types';
+import { getIdToken } from '@/services/authService';
 
 const initialState: PhotosState = {
   items: [],
@@ -9,11 +10,23 @@ const initialState: PhotosState = {
   error: null,
 };
 
+/**
+ * Get auth headers if user is logged in
+ */
+const getAuthHeaders = async (): Promise<HeadersInit> => {
+  const token = await getIdToken();
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+};
+
 // Async thunk to fetch photos from API
 export const fetchPhotos = createAsyncThunk<Photo[]>(
   'photos/fetchPhotos',
   async () => {
-    const response = await fetch('/api/photos');
+    const headers = await getAuthHeaders();
+    const response = await fetch('/api/photos', { headers });
     const data = (await response.json()) as { photos: Photo[] };
     return data.photos;
   }
@@ -31,6 +44,12 @@ const photosSlice = createSlice({
       const photoId = action.payload;
       state.items = state.items.filter((photo) => photo.id !== photoId);
       state.selectedIds = state.selectedIds.filter((id) => id !== photoId);
+    },
+    deleteSelectedPhotos: (state) => {
+      state.items = state.items.filter(
+        (photo) => !state.selectedIds.includes(photo.id)
+      );
+      state.selectedIds = [];
     },
     selectPhoto: (state, action: PayloadAction<string>) => {
       const photoId = action.payload;
@@ -76,6 +95,7 @@ const photosSlice = createSlice({
 export const {
   addPhotos,
   deletePhoto,
+  deleteSelectedPhotos,
   selectPhoto,
   deselectPhoto,
   togglePhotoSelection,

@@ -60,4 +60,151 @@ test.describe('Photo Library', () => {
     await expect(page.getByRole('button', { name: 'Upload' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Google' })).toBeVisible();
   });
+
+  test('should show delete and clear buttons when photos are selected', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Select a photo
+    await page.locator('img[loading="lazy"]').first().click();
+
+    // Verify delete and clear buttons appear
+    await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Clear' })).toBeVisible();
+  });
+
+  test('should clear selection when clicking clear button', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Select photos
+    await page.locator('img[loading="lazy"]').nth(0).click();
+    await page.locator('img[loading="lazy"]').nth(1).click();
+    await expect(page.getByText('2 photos selected')).toBeVisible();
+
+    // Click clear
+    await page.getByRole('button', { name: 'Clear' }).click();
+
+    // Verify selection is cleared
+    await expect(page.getByText('2 photos selected')).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Delete' })
+    ).not.toBeVisible();
+  });
+
+  test('should show confirmation dialog when clicking delete', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Select a photo
+    await page.locator('img[loading="lazy"]').first().click();
+
+    // Click delete button
+    await page.getByRole('button', { name: 'Delete' }).click();
+
+    // Verify confirmation dialog appears
+    await expect(page.getByText('Delete photos?')).toBeVisible();
+    await expect(
+      page.getByText('This will permanently delete 1 photo from your library')
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  });
+
+  test('should cancel delete when clicking cancel', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify initial count
+    await expect(page.locator('img[loading="lazy"]')).toHaveCount(12);
+
+    // Select a photo
+    await page.locator('img[loading="lazy"]').first().click();
+
+    // Click delete button
+    await page.getByRole('button', { name: 'Delete' }).click();
+
+    // Click cancel in the dialog
+    await page.getByRole('button', { name: 'Cancel' }).click();
+
+    // Verify photo was NOT deleted
+    await expect(page.locator('img[loading="lazy"]')).toHaveCount(12);
+  });
+
+  test('should delete selected photos after confirmation', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify initial count
+    await expect(page.locator('img[loading="lazy"]')).toHaveCount(12);
+
+    // Select first photo
+    await page.locator('img[loading="lazy"]').first().click();
+    await expect(page.getByText('1 photo selected')).toBeVisible();
+
+    // Click delete button to open dialog
+    await page.getByRole('button', { name: 'Delete' }).click();
+
+    // Confirm deletion in dialog
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete' })
+      .click();
+
+    // Verify photo was deleted
+    await expect(page.locator('img[loading="lazy"]')).toHaveCount(11);
+    await expect(
+      page.getByRole('button', { name: 'Delete' })
+    ).not.toBeVisible();
+  });
+
+  test('should delete multiple selected photos after confirmation', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify initial count
+    await expect(page.locator('img[loading="lazy"]')).toHaveCount(12);
+
+    // Select multiple photos
+    await page.locator('img[loading="lazy"]').nth(0).click();
+    await page.locator('img[loading="lazy"]').nth(1).click();
+    await page.locator('img[loading="lazy"]').nth(2).click();
+    await expect(page.getByText('3 photos selected')).toBeVisible();
+
+    // Click delete button to open dialog
+    await page.getByRole('button', { name: 'Delete' }).click();
+
+    // Verify dialog shows correct count
+    await expect(
+      page.getByText('This will permanently delete 3 photos from your library')
+    ).toBeVisible();
+
+    // Confirm deletion
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete' })
+      .click();
+
+    // Verify photos were deleted
+    await expect(page.locator('img[loading="lazy"]')).toHaveCount(9);
+  });
 });

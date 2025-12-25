@@ -9,6 +9,7 @@
 ## Documentation
 
 - [Architecture Overview](docs/architecture.md) - Tech stack, project structure, and application flow
+- [Firebase Integration](docs/firebase.md) - Firestore database and Google Sign-In authentication
 - [CI/CD Pipeline](docs/cicd.md) - GitHub Actions, Render deployment, and manual operations
 - [Versioning](docs/versioning.md) - Semantic versioning, git hooks, and Docker image tagging
 - [Playwright MCP Guide](docs/playwright-mcp.md) - Interactive testing with Playwright MCP tools
@@ -17,10 +18,11 @@
 
 ### IMPORTANT: For Every Feature/Change
 
-1. **Update Documentation** - Keep `docs/` files in sync with any architectural or CI/CD changes
-2. **Write/Update Tests** - Every feature must have corresponding tests
-3. **Run Lint** - ESLint and Prettier must pass
+1. **Run type check** 
+2. **Run Lint** - ESLint and Prettier must pass
+3. **Write/Update Tests** - Every feature must have corresponding tests
 4. **Run All Tests Before Committing** - Unit, integration, and E2E tests must pass
+5. **Update Documentation** - Keep `docs/` files in sync with any architectural or CI/CD changes
 
 ### Pre-Commit Checklist
 
@@ -71,8 +73,10 @@ Alternatively, you can run checks individually:
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express
-- **Frontend:** React + Redux Toolkit + Vite
+- **Backend:** Node.js + Express + TypeScript
+- **Frontend:** React + Redux Toolkit + Vite + TypeScript
+- **Database:** Firebase Firestore
+- **Authentication:** Firebase Auth (Google Sign-In)
 - **Testing:** Jest + React Testing Library + Playwright
 - **Linting:** ESLint (v9 flat config) + Prettier
 - **Container:** Docker

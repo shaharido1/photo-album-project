@@ -10,11 +10,23 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Upload,
   ImagePlus,
   Check,
   GripVertical,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import {
   fetchPhotos,
@@ -24,6 +36,8 @@ import {
   selectSelectedPhotoIds,
   togglePhotoSelection,
   addPhotos,
+  deleteSelectedPhotos,
+  clearSelection,
 } from '@/features/photos/photosSlice';
 import {
   selectAlbumId,
@@ -194,6 +208,15 @@ export function PhotoLibraryPanel(): JSX.Element {
     dispatch(togglePhotoSelection(photoId));
   };
 
+  const handleDeleteSelected = (): void => {
+    if (selectedIds.length === 0) return;
+    dispatch(deleteSelectedPhotos());
+  };
+
+  const handleClearSelection = (): void => {
+    dispatch(clearSelection());
+  };
+
   const handleDragStart = (
     e: DragEvent<HTMLDivElement>,
     photoId: string
@@ -279,10 +302,53 @@ export function PhotoLibraryPanel(): JSX.Element {
         )}
 
         {selectedIds.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-2">
-            {selectedIds.length} photo{selectedIds.length !== 1 ? 's' : ''}{' '}
-            selected
-          </p>
+          <div className="mt-2 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {selectedIds.length} photo{selectedIds.length !== 1 ? 's' : ''}{' '}
+              selected
+            </p>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleClearSelection}
+              >
+                Clear
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete photos?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete {selectedIds.length}{' '}
+                      {selectedIds.length === 1 ? 'photo' : 'photos'} from your
+                      library. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteSelected}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
         )}
         {albumId && (
           <p className="text-xs text-primary mt-2">

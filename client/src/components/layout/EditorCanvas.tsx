@@ -7,7 +7,8 @@ import {
   Group,
   Transformer,
 } from 'react-konva';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Book } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
 import {
   selectCurrentPage,
@@ -19,6 +20,7 @@ import {
   updateSlotPosition,
   updateSlotScale,
   selectSlot,
+  setViewMode,
   ALBUM_SIZE_PRESETS,
 } from '@/features/album/albumSlice';
 import { selectAllPhotos } from '@/features/photos/photosSlice';
@@ -413,13 +415,33 @@ export function EditorCanvas(): JSX.Element {
     );
   }
 
+  const handleBackToBook = (): void => {
+    dispatch(setViewMode('book'));
+  };
+
   return (
     <div
       ref={containerRef}
-      className="flex-1 bg-muted/50 flex items-center justify-center p-8"
+      className="flex-1 bg-muted/50 flex items-center justify-center p-8 relative"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
+      {/* Back to Book button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="absolute top-4 left-4 gap-2"
+        onClick={handleBackToBook}
+      >
+        <Book className="h-4 w-4" />
+        Back to Book
+      </Button>
+
+      {/* Page indicator */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-sm text-muted-foreground bg-background/80 px-3 py-1 rounded-full">
+        Page {currentPageIndex + 1}
+      </div>
+
       <div
         className="bg-background rounded-lg shadow-lg overflow-hidden"
         style={{ width: stageSize.width, height: stageSize.height }}

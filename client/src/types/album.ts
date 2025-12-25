@@ -77,10 +77,25 @@ export interface SelectedSlotRef {
   slotIndex: number;
 }
 
+// View mode type
+export type ViewMode = 'book' | 'edit';
+
+// Spread info (for book view)
+export interface SpreadInfo {
+  spreadIndex: number;
+  leftPage: AlbumPage | null;
+  rightPage: AlbumPage | null;
+  leftPageIndex: number | null;
+  rightPageIndex: number | null;
+  isCover: boolean;
+}
+
 // Album state
 export interface AlbumState {
   album: Album;
   selectedSlot: SelectedSlotRef | null;
+  viewMode: ViewMode;
+  currentSpread: number;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }

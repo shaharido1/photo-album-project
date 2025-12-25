@@ -2,7 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Download, Save, Moon, Sun, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { selectAlbumName, selectAlbumId } from '@/features/album/albumSlice';
+import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
+import { LoginButton } from '@/components/auth/LoginButton';
+import { UserMenu } from '@/components/auth/UserMenu';
+import { ViewModeToggle } from './ViewModeToggle';
 import { useAppSelector } from '@/app/hooks';
 
 const getInitialDarkMode = (): boolean => {
@@ -20,6 +24,7 @@ export function Header(): JSX.Element {
 
   const albumId = useAppSelector(selectAlbumId);
   const albumName = useAppSelector(selectAlbumName);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   const toggleDarkMode = (): void => {
     setIsDark(!isDark);
@@ -38,6 +43,8 @@ export function Header(): JSX.Element {
       </div>
 
       <div className="flex items-center gap-2">
+        <ViewModeToggle />
+
         <Button
           variant="outline"
           size="sm"
@@ -69,6 +76,9 @@ export function Header(): JSX.Element {
         >
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
+
+        {/* Auth: Show login button or user menu */}
+        {isAuthenticated ? <UserMenu /> : <LoginButton />}
       </div>
 
       <CreateAlbumDialog

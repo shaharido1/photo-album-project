@@ -2,6 +2,7 @@
 import photosReducer, {
   addPhotos,
   deletePhoto,
+  deleteSelectedPhotos,
   selectPhoto,
   deselectPhoto,
   togglePhotoSelection,
@@ -111,6 +112,79 @@ describe('photosSlice', () => {
       );
 
       expect(newState.items).toHaveLength(1);
+    });
+  });
+
+  describe('deleteSelectedPhotos', () => {
+    const mockPhoto3: Photo = {
+      id: 'photo-3',
+      name: 'Test Photo 3',
+      thumbnail: 'blob:http://localhost/test-thumb-3',
+      fullSize: 'blob:http://localhost/test-full-3',
+      width: 1000,
+      height: 750,
+      createdAt: '2024-12-25T12:00:00Z',
+      isUploaded: true,
+    };
+
+    it('should delete all selected photos', () => {
+      const stateWithSelection: PhotosState = {
+        ...initialState,
+        items: [mockPhoto, mockPhoto2, mockPhoto3],
+        selectedIds: ['photo-1', 'photo-3'],
+      };
+
+      const newState = photosReducer(
+        stateWithSelection,
+        deleteSelectedPhotos()
+      );
+
+      expect(newState.items).toHaveLength(1);
+      expect(newState.items[0].id).toBe('photo-2');
+    });
+
+    it('should clear selectedIds after deletion', () => {
+      const stateWithSelection: PhotosState = {
+        ...initialState,
+        items: [mockPhoto, mockPhoto2],
+        selectedIds: ['photo-1'],
+      };
+
+      const newState = photosReducer(
+        stateWithSelection,
+        deleteSelectedPhotos()
+      );
+
+      expect(newState.selectedIds).toEqual([]);
+    });
+
+    it('should handle empty selection gracefully', () => {
+      const stateWithPhotos: PhotosState = {
+        ...initialState,
+        items: [mockPhoto, mockPhoto2],
+        selectedIds: [],
+      };
+
+      const newState = photosReducer(stateWithPhotos, deleteSelectedPhotos());
+
+      expect(newState.items).toHaveLength(2);
+      expect(newState.selectedIds).toEqual([]);
+    });
+
+    it('should delete all photos when all are selected', () => {
+      const stateWithAllSelected: PhotosState = {
+        ...initialState,
+        items: [mockPhoto, mockPhoto2],
+        selectedIds: ['photo-1', 'photo-2'],
+      };
+
+      const newState = photosReducer(
+        stateWithAllSelected,
+        deleteSelectedPhotos()
+      );
+
+      expect(newState.items).toHaveLength(0);
+      expect(newState.selectedIds).toEqual([]);
     });
   });
 

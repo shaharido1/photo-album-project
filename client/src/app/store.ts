@@ -4,6 +4,7 @@ import fooReducer from '../features/foo/fooSlice';
 import versionReducer from '../features/version/versionSlice';
 import photosReducer from '../features/photos/photosSlice';
 import albumReducer from '../features/album/albumSlice';
+import authReducer from '../features/auth/authSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     version: versionReducer,
     photos: photosReducer,
     album: albumReducer,
+    auth: authReducer,
   },
 });
 
