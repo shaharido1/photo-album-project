@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { mockPhotos } from '../mock/photos.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,6 +34,19 @@ router.get('/foo', (_req, res) => {
 
 router.get('/version', (_req, res) => {
   res.json({ version: appVersion });
+});
+
+// Photos API - mock data for development
+router.get('/photos', (_req, res) => {
+  res.json({ photos: mockPhotos });
+});
+
+router.get('/photos/:id', (req, res) => {
+  const photo = mockPhotos.find((p) => p.id === req.params.id);
+  if (!photo) {
+    return res.status(404).json({ error: 'Photo not found' });
+  }
+  res.json({ photo });
 });
 
 export default router;
