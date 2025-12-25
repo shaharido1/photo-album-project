@@ -4,7 +4,7 @@ import Version from './features/version/Version';
 
 function App() {
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
+    <div className="text-center mt-12">
       <Greeting />
       <Foo />
       <Version />
