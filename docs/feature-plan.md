@@ -42,24 +42,24 @@ All UI components must:
 
 - [ ] Upload photos from device (drag-and-drop + file picker)
 - [ ] Import from Google Photos (OAuth)
-- [ ] Photo library grid view with thumbnails
-- [ ] Select multiple photos for album
+- [x] Photo library grid view with thumbnails
+- [x] Select multiple photos for album
 - [ ] Delete/remove photos from library
 
 ### 2. Album Setup
 
-- [ ] Create new album (name, size selection)
-- [ ] Album size presets:
+- [x] Create new album (name, size selection)
+- [x] Album size presets:
   - 8x8" (20x20 cm)
   - 10x10" (25x25 cm)
   - 12x12" (30x30 cm)
   - A4 landscape
   - A4 portrait
-- [ ] Set page count (or auto-expand)
+- [x] Set page count (or auto-expand)
 
 ### 3. Page Layouts & Templates
 
-- [ ] Layout template library:
+- [x] Layout template library:
   - Single photo (full page)
   - Single photo (with margins)
   - 2 photos (horizontal split)
@@ -68,14 +68,14 @@ All UI components must:
   - 4 photos (grid)
   - 6 photos (grid)
   - Collage (freeform)
-- [ ] Apply template to page
-- [ ] Drag-and-drop photos into template slots
+- [x] Apply template to page
+- [x] Drag-and-drop photos into template slots
 
 ### 4. Photo Placement
 
-- [ ] Drag photo within frame to reposition
-- [ ] Zoom/scale photo within frame
-- [ ] Rotate photo (90° increments)
+- [x] Drag photo within frame to reposition
+- [x] Zoom/scale photo within frame
+- [x] Rotate photo (90° increments)
 - [ ] Swap photos between slots
 
 ### 5. Auto-Arrange
@@ -96,13 +96,13 @@ All UI components must:
 
 ### 7. Page Backgrounds
 
-- [ ] Solid color backgrounds
-- [ ] Preset background colors/themes
-- [ ] White, black, cream defaults
+- [x] Solid color backgrounds
+- [x] Preset background colors/themes
+- [x] White, black, cream defaults
 
 ### 8. Preview
 
-- [ ] Page-by-page preview
+- [x] Page-by-page preview
 - [ ] Album flip-through view
 - [ ] Zoom in/out on pages
 
@@ -211,11 +211,11 @@ All UI components must:
 | Decision | Options | Chosen |
 | -------- | ------- | ------ |
 | Frontend Framework | React (existing), Vue, Svelte | React |
-| Canvas Library | Fabric.js, Konva.js, Paper.js | TBD |
+| Canvas Library | Fabric.js, Konva.js, Paper.js | Konva.js |
 | PDF Generation | jsPDF, pdf-lib, Puppeteer | TBD |
 | Image Processing | Browser canvas, Sharp (server) | TBD |
 | Google APIs | Photos API, Drive API | Both |
-| State Management | Redux (existing), Zustand | TBD |
+| State Management | Redux (existing), Zustand | Redux Toolkit |
 
 ---
 

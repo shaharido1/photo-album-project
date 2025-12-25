@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Upload, ImagePlus, Check } from 'lucide-react';
+import { Upload, ImagePlus, Check, GripVertical } from 'lucide-react';
 import {
   fetchPhotos,
   selectAllPhotos,
@@ -12,6 +12,13 @@ import {
   selectSelectedPhotoIds,
   togglePhotoSelection,
 } from '@/features/photos/photosSlice';
+import {
+  selectAlbumId,
+  selectCurrentPageIndex,
+  assignPhotoToSlot,
+  selectCurrentPage,
+  selectSlot,
+} from '@/features/album/albumSlice';
 import { cn } from '@/lib/utils';
 
 export function PhotoLibraryPanel() {
@@ -20,6 +27,9 @@ export function PhotoLibraryPanel() {
   const status = useSelector(selectPhotosStatus);
   const error = useSelector(selectPhotosError);
   const selectedIds = useSelector(selectSelectedPhotoIds);
+  const albumId = useSelector(selectAlbumId);
+  const currentPageIndex = useSelector(selectCurrentPageIndex);
+  const currentPage = useSelector(selectCurrentPage);
 
   useEffect(() => {
     if (status === 'idle') {
@@ -32,6 +42,26 @@ export function PhotoLibraryPanel() {
 
   const handlePhotoClick = (photoId) => {
     dispatch(togglePhotoSelection(photoId));
+  };
+
+  const handleDragStart = (e, photoId) => {
+    e.dataTransfer.setData('photoId', photoId);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDoubleClick = (photoId) => {
+    if (!albumId || !currentPage) return;
+
+    // Find first empty slot
+    const emptySlotIndex = currentPage.slots.findIndex(slot => !slot.photoId);
+    if (emptySlotIndex !== -1) {
+      dispatch(assignPhotoToSlot({
+        pageIndex: currentPageIndex,
+        slotIndex: emptySlotIndex,
+        photoId
+      }));
+      dispatch(selectSlot({ pageIndex: currentPageIndex, slotIndex: emptySlotIndex }));
+    }
   };
 
   return (
@@ -52,6 +82,11 @@ export function PhotoLibraryPanel() {
           <p className="text-xs text-muted-foreground mt-2">
             {selectedIds.length} photo{selectedIds.length !== 1 ? 's' : ''}{' '}
             selected
+          </p>
+        )}
+        {albumId && (
+          <p className="text-xs text-primary mt-2">
+            Drag photos to canvas or double-click to add
           </p>
         )}
       </div>
@@ -97,12 +132,16 @@ export function PhotoLibraryPanel() {
                 return (
                   <div
                     key={photo.id}
+                    draggable={!!albumId}
+                    onDragStart={(e) => handleDragStart(e, photo.id)}
                     onClick={() => handlePhotoClick(photo.id)}
+                    onDoubleClick={() => handleDoubleClick(photo.id)}
                     className={cn(
-                      'relative aspect-square rounded-md bg-muted overflow-hidden cursor-pointer transition-all',
+                      'relative aspect-square rounded-md bg-muted overflow-hidden cursor-pointer transition-all group',
                       isSelected
                         ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                        : 'hover:ring-2 hover:ring-primary/50'
+                        : 'hover:ring-2 hover:ring-primary/50',
+                      albumId && 'cursor-grab active:cursor-grabbing'
                     )}
                   >
                     <img
@@ -110,10 +149,16 @@ export function PhotoLibraryPanel() {
                       alt={photo.name}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      draggable={false}
                     />
                     {isSelected && (
                       <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
                         <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+                    {albumId && (
+                      <div className="absolute top-1 left-1 w-5 h-5 rounded bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GripVertical className="h-3 w-3 text-white" />
                       </div>
                     )}
                   </div>
