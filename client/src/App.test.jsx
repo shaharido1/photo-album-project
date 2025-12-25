@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import greetingReducer from './features/greeting/greetingSlice';
 import fooReducer from './features/foo/fooSlice';
+import versionReducer from './features/version/versionSlice';
 import App from './App';
 
 const createTestStore = (preloadedState) => {
@@ -10,6 +11,7 @@ const createTestStore = (preloadedState) => {
     reducer: {
       greeting: greetingReducer,
       foo: fooReducer,
+      version: versionReducer,
     },
     preloadedState,
   });
@@ -20,6 +22,7 @@ describe('App', () => {
     const store = createTestStore({
       greeting: { message: '', status: 'idle', error: null },
       foo: { value: '', status: 'idle', error: null },
+      version: { value: '1.0.0', status: 'succeeded', error: null },
     });
 
     render(
@@ -35,6 +38,7 @@ describe('App', () => {
     const store = createTestStore({
       greeting: { message: 'Hello World', status: 'succeeded', error: null },
       foo: { value: 'foo', status: 'succeeded', error: null },
+      version: { value: '1.0.0', status: 'succeeded', error: null },
     });
 
     render(
@@ -57,6 +61,7 @@ describe('App', () => {
         error: 'Failed to fetch greeting',
       },
       foo: { value: '', status: 'succeeded', error: null },
+      version: { value: '1.0.0', status: 'succeeded', error: null },
     });
 
     render(
@@ -74,6 +79,7 @@ describe('App', () => {
     const store = createTestStore({
       greeting: { message: 'Hello World', status: 'succeeded', error: null },
       foo: { value: 'foo', status: 'succeeded', error: null },
+      version: { value: '1.0.0', status: 'succeeded', error: null },
     });
 
     render(
