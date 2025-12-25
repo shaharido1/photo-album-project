@@ -38,62 +38,75 @@ export function PropertiesPanel() {
   const layouts = getAllLayouts();
 
   // Get selected slot data
-  const slot = selectedSlot && currentPage
-    ? currentPage.slots[selectedSlot.slotIndex]
-    : null;
+  const slot =
+    selectedSlot && currentPage
+      ? currentPage.slots[selectedSlot.slotIndex]
+      : null;
 
   const photo = slot?.photoId
-    ? photos.find(p => p.id === slot.photoId)
+    ? photos.find((p) => p.id === slot.photoId)
     : null;
 
   const handleScaleChange = (value) => {
     if (!selectedSlot) return;
-    dispatch(updateSlotScale({
-      pageIndex: selectedSlot.pageIndex,
-      slotIndex: selectedSlot.slotIndex,
-      scale: value[0]
-    }));
+    dispatch(
+      updateSlotScale({
+        pageIndex: selectedSlot.pageIndex,
+        slotIndex: selectedSlot.slotIndex,
+        scale: value[0],
+      })
+    );
   };
 
   const handleRotate = () => {
     if (!selectedSlot || !slot) return;
     const newRotation = (slot.rotation + 90) % 360;
-    dispatch(updateSlotRotation({
-      pageIndex: selectedSlot.pageIndex,
-      slotIndex: selectedSlot.slotIndex,
-      rotation: newRotation
-    }));
+    dispatch(
+      updateSlotRotation({
+        pageIndex: selectedSlot.pageIndex,
+        slotIndex: selectedSlot.slotIndex,
+        rotation: newRotation,
+      })
+    );
   };
 
   const handleResetPosition = () => {
     if (!selectedSlot) return;
-    dispatch(updateSlotPosition({
-      pageIndex: selectedSlot.pageIndex,
-      slotIndex: selectedSlot.slotIndex,
-      position: { x: 0, y: 0 }
-    }));
+    dispatch(
+      updateSlotPosition({
+        pageIndex: selectedSlot.pageIndex,
+        slotIndex: selectedSlot.slotIndex,
+        position: { x: 0, y: 0 },
+      })
+    );
   };
 
   const handleRemove = () => {
     if (!selectedSlot) return;
-    dispatch(removePhotoFromSlot({
-      pageIndex: selectedSlot.pageIndex,
-      slotIndex: selectedSlot.slotIndex
-    }));
+    dispatch(
+      removePhotoFromSlot({
+        pageIndex: selectedSlot.pageIndex,
+        slotIndex: selectedSlot.slotIndex,
+      })
+    );
   };
 
   const handleLayoutChange = (layoutId) => {
-    dispatch(updatePageLayout({
-      pageIndex: currentPageIndex,
-      layoutId
-    }));
+    dispatch(
+      updatePageLayout({
+        pageIndex: currentPageIndex,
+        layoutId,
+      })
+    );
   };
 
   const handleBackgroundChange = (color) => {
-    dispatch(setPageBackground({
-      pageIndex: currentPageIndex,
-      color
-    }));
+    dispatch(
+      setPageBackground({
+        pageIndex: currentPageIndex,
+        color,
+      })
+    );
   };
 
   if (!albumId) {
@@ -256,9 +269,7 @@ export function PropertiesPanel() {
           </div>
         ) : slot ? (
           <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              Empty slot selected
-            </p>
+            <p className="text-sm text-muted-foreground">Empty slot selected</p>
             <p className="text-xs text-muted-foreground mt-1">
               Drag a photo here to add it
             </p>

@@ -9,12 +9,16 @@ async function createAlbum(page, name = 'Test Album') {
 }
 
 test.describe('Page Timeline', () => {
-  test('should display page timeline after album creation', async ({ page }) => {
+  test('should display page timeline after album creation', async ({
+    page,
+  }) => {
     await page.goto('/');
     await createAlbum(page, 'Timeline Test');
 
     // Verify page timeline shows first page and add button
-    await expect(page.getByRole('button', { name: 'Add new page' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Add new page' })
+    ).toBeVisible();
   });
 
   test('should add new page', async ({ page }) => {
@@ -25,7 +29,9 @@ test.describe('Page Timeline', () => {
     await page.getByRole('button', { name: 'Add new page' }).click();
 
     // Verify second page exists (look for page numbers)
-    await expect(page.locator('.bg-black\\/60').filter({ hasText: '2' })).toBeVisible();
+    await expect(
+      page.locator('.bg-black\\/60').filter({ hasText: '2' })
+    ).toBeVisible();
   });
 
   test('should navigate between pages', async ({ page }) => {
@@ -36,10 +42,19 @@ test.describe('Page Timeline', () => {
     await page.getByRole('button', { name: 'Add new page' }).click();
 
     // Click on page 2 thumbnail (look for the page with number 2)
-    await page.locator('.bg-black\\/60').filter({ hasText: '2' }).locator('..').click();
+    await page
+      .locator('.bg-black\\/60')
+      .filter({ hasText: '2' })
+      .locator('..')
+      .click();
 
     // The second page should now be selected (have the primary border)
-    await expect(page.locator('.border-primary').locator('.bg-black\\/60').filter({ hasText: '2' })).toBeVisible();
+    await expect(
+      page
+        .locator('.border-primary')
+        .locator('.bg-black\\/60')
+        .filter({ hasText: '2' })
+    ).toBeVisible();
   });
 
   test('should remove page when multiple pages exist', async ({ page }) => {
@@ -48,7 +63,9 @@ test.describe('Page Timeline', () => {
 
     // Add a second page
     await page.getByRole('button', { name: 'Add new page' }).click();
-    await expect(page.locator('.bg-black\\/60').filter({ hasText: '2' })).toBeVisible();
+    await expect(
+      page.locator('.bg-black\\/60').filter({ hasText: '2' })
+    ).toBeVisible();
 
     // Hover over first page thumbnail to show delete button and click it
     const firstPageThumbnail = page.locator('.w-16.h-16').first();
@@ -56,6 +73,8 @@ test.describe('Page Timeline', () => {
     await firstPageThumbnail.locator('button').click();
 
     // Only one page should remain
-    await expect(page.locator('.bg-black\\/60').filter({ hasText: '2' })).not.toBeVisible();
+    await expect(
+      page.locator('.bg-black\\/60').filter({ hasText: '2' })
+    ).not.toBeVisible();
   });
 });

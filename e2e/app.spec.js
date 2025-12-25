@@ -5,7 +5,9 @@ test.describe('Initial Load & Layout', () => {
     await page.goto('/');
 
     // Verify the main editor components are visible
-    await expect(page.getByRole('heading', { name: 'Photo Album' })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole('heading', { name: 'Photo Album' })
+    ).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Photo Library')).toBeVisible();
     await expect(page.getByText('Properties')).toBeVisible();
   });
@@ -18,7 +20,9 @@ test.describe('Initial Load & Layout', () => {
     await expect(page.getByText('Create an album to see pages')).toBeVisible();
   });
 
-  test('should show "No album" text in header before album creation', async ({ page }) => {
+  test('should show "No album" text in header before album creation', async ({
+    page,
+  }) => {
     await page.goto('/');
     await expect(page.getByText('No album')).toBeVisible();
   });

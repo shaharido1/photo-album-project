@@ -9,7 +9,9 @@ async function createAlbum(page, name = 'Test Album') {
 }
 
 test.describe('Properties Panel - Layout Templates', () => {
-  test('should display layout options after album creation', async ({ page }) => {
+  test('should display layout options after album creation', async ({
+    page,
+  }) => {
     await page.goto('/');
     await createAlbum(page);
 
@@ -61,7 +63,9 @@ test.describe('Properties Panel - Background Colors', () => {
 });
 
 test.describe('Properties Panel - Photo Controls', () => {
-  test('should show empty slot message when slot selected without photo', async ({ page }) => {
+  test('should show empty slot message when slot selected without photo', async ({
+    page,
+  }) => {
     await page.goto('/');
     await createAlbum(page);
 
@@ -89,7 +93,9 @@ test.describe('Properties Panel - Photo Controls', () => {
     await expect(page.getByText('Zoom')).toBeVisible();
   });
 
-  test('should show rotate and reset buttons for selected photo', async ({ page }) => {
+  test('should show rotate and reset buttons for selected photo', async ({
+    page,
+  }) => {
     await page.goto('/');
     await createAlbum(page);
 
@@ -104,7 +110,9 @@ test.describe('Properties Panel - Photo Controls', () => {
     await expect(page.getByRole('button', { name: /Reset/ })).toBeVisible();
   });
 
-  test('should show remove from page button for selected photo', async ({ page }) => {
+  test('should show remove from page button for selected photo', async ({
+    page,
+  }) => {
     await page.goto('/');
     await createAlbum(page);
 
@@ -115,7 +123,9 @@ test.describe('Properties Panel - Photo Controls', () => {
     // Click on the canvas to select the slot with photo
     await page.locator('canvas').click();
 
-    await expect(page.getByRole('button', { name: 'Remove from page' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Remove from page' })
+    ).toBeVisible();
   });
 });
 
@@ -127,7 +137,9 @@ test.describe('Dark Mode', () => {
     const html = page.locator('html');
 
     // Click dark mode toggle
-    const darkModeButton = page.getByRole('button', { name: /Switch to (light|dark) mode/ });
+    const darkModeButton = page.getByRole('button', {
+      name: /Switch to (light|dark) mode/,
+    });
     await darkModeButton.click();
 
     // Verify dark class is toggled
@@ -138,15 +150,21 @@ test.describe('Dark Mode', () => {
     await page.goto('/');
 
     const html = page.locator('html');
-    const darkModeButton = page.getByRole('button', { name: /Switch to (light|dark) mode/ });
+    const darkModeButton = page.getByRole('button', {
+      name: /Switch to (light|dark) mode/,
+    });
 
     // Toggle dark mode on
     await darkModeButton.click();
-    const hasDarkAfterFirstClick = await html.evaluate(el => el.classList.contains('dark'));
+    const hasDarkAfterFirstClick = await html.evaluate((el) =>
+      el.classList.contains('dark')
+    );
 
     // Toggle again
     await darkModeButton.click();
-    const hasDarkAfterSecondClick = await html.evaluate(el => el.classList.contains('dark'));
+    const hasDarkAfterSecondClick = await html.evaluate((el) =>
+      el.classList.contains('dark')
+    );
 
     // States should be opposite
     expect(hasDarkAfterFirstClick).not.toBe(hasDarkAfterSecondClick);

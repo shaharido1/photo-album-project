@@ -10,6 +10,7 @@
 
 - [Architecture Overview](docs/architecture.md) - Tech stack, project structure, and application flow
 - [CI/CD Pipeline](docs/cicd.md) - GitHub Actions, Render deployment, and manual operations
+- [Playwright MCP Guide](docs/playwright-mcp.md) - Interactive testing with Playwright MCP tools
 
 ## Development Guidelines
 
@@ -50,23 +51,7 @@ For any new feature or bug fix, you MUST:
    ```
 
 5. **Use Playwright MCP for Interactive Testing**
-   - Use the `mcp__playwright__*` tools to interactively test the application
-   - Navigate to pages, click elements, fill forms, and verify behavior
-   - Example workflow:
-     ```
-     1. mcp__playwright__browser_navigate to http://localhost:3000
-     2. mcp__playwright__browser_snapshot to see current state
-     3. mcp__playwright__browser_click to interact with elements
-     4. Verify expected behavior
-     ```
-
-### Test Files Location
-
-| Type        | Location                   | Framework  |
-| ----------- | -------------------------- | ---------- |
-| Server Unit | `server/tests/*.test.js`   | Jest       |
-| Client Unit | `client/src/**/*.test.jsx` | Jest + RTL |
-| E2E         | `e2e/*.spec.js`            | Playwright |
+   - See [Playwright MCP Guide](docs/playwright-mcp.md) for detailed usage instructions
 
 ## Tech Stack
 

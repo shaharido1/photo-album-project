@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Stage, Layer, Rect, Image as KonvaImage, Group, Transformer } from 'react-konva';
+import {
+  Stage,
+  Layer,
+  Rect,
+  Image as KonvaImage,
+  Group,
+  Transformer,
+} from 'react-konva';
 import { useSelector, useDispatch } from 'react-redux';
 import { ImagePlus } from 'lucide-react';
 import {
@@ -19,27 +26,32 @@ import { getLayoutById } from '@/features/layouts/layoutTemplates';
 
 // Custom hook to load images
 function useImage(url) {
-  const [image, setImage] = useState(null);
-  const [status, setStatus] = useState('loading');
+  const [state, setState] = useState({
+    image: null,
+    status: url ? 'loading' : 'idle',
+  });
 
   useEffect(() => {
     if (!url) {
-      setImage(null);
-      setStatus('idle');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional reset when URL is cleared
+      setState({ image: null, status: 'idle' });
       return;
     }
+
+    // Reset to loading state when URL changes
+    setState((prev) =>
+      prev.status === 'loading' ? prev : { image: null, status: 'loading' }
+    );
 
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
-      setImage(img);
-      setStatus('loaded');
+      setState({ image: img, status: 'loaded' });
     };
 
     img.onerror = () => {
-      setImage(null);
-      setStatus('error');
+      setState({ image: null, status: 'error' });
     };
 
     img.src = url;
@@ -50,11 +62,21 @@ function useImage(url) {
     };
   }, [url]);
 
-  return [image, status];
+  return [state.image, state.status];
 }
 
 // Photo slot component with image
-function PhotoSlot({ slot, slotDef, slotIndex, pageIndex, photo, isSelected, stageWidth, stageHeight, onSelect }) {
+function PhotoSlot({
+  slot,
+  slotDef,
+  slotIndex,
+  pageIndex,
+  photo,
+  isSelected,
+  stageWidth,
+  stageHeight,
+  onSelect,
+}) {
   const dispatch = useDispatch();
   const shapeRef = useRef();
   const transformerRef = useRef();
@@ -84,11 +106,13 @@ function PhotoSlot({ slot, slotDef, slotIndex, pageIndex, photo, isSelected, sta
     // Calculate offset from slot position as percentage
     const offsetX = ((node.x() - slotX) / slotWidth) * 100;
     const offsetY = ((node.y() - slotY) / slotHeight) * 100;
-    dispatch(updateSlotPosition({
-      pageIndex,
-      slotIndex,
-      position: { x: offsetX, y: offsetY }
-    }));
+    dispatch(
+      updateSlotPosition({
+        pageIndex,
+        slotIndex,
+        position: { x: offsetX, y: offsetY },
+      })
+    );
   };
 
   const handleTransformEnd = () => {
@@ -97,7 +121,9 @@ function PhotoSlot({ slot, slotDef, slotIndex, pageIndex, photo, isSelected, sta
     // Reset scale and apply to width/height
     node.scaleX(1);
     node.scaleY(1);
-    dispatch(updateSlotScale({ pageIndex, slotIndex, scale: slot.scale * scaleX }));
+    dispatch(
+      updateSlotScale({ pageIndex, slotIndex, scale: slot.scale * scaleX })
+    );
   };
 
   // Calculate image display dimensions
@@ -183,7 +209,12 @@ function PhotoSlot({ slot, slotDef, slotIndex, pageIndex, photo, isSelected, sta
             }
             return newBox;
           }}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
+          enabledAnchors={[
+            'top-left',
+            'top-right',
+            'bottom-left',
+            'bottom-right',
+          ]}
           rotateEnabled={false}
         />
       )}
@@ -204,8 +235,10 @@ export function EditorCanvas() {
   const photos = useSelector(selectAllPhotos);
 
   // Get album dimensions for aspect ratio
-  const sizePreset = ALBUM_SIZE_PRESETS[albumSize] || ALBUM_SIZE_PRESETS['10x10'];
-  const aspectRatio = sizePreset.dimensions.width / sizePreset.dimensions.height;
+  const sizePreset =
+    ALBUM_SIZE_PRESETS[albumSize] || ALBUM_SIZE_PRESETS['10x10'];
+  const aspectRatio =
+    sizePreset.dimensions.width / sizePreset.dimensions.height;
 
   // Handle container resize
   useEffect(() => {
@@ -236,22 +269,31 @@ export function EditorCanvas() {
   }, [aspectRatio]);
 
   // Handle dropping photos onto canvas
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    const photoId = e.dataTransfer.getData('photoId');
-    if (!photoId || !currentPage) return;
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      const photoId = e.dataTransfer.getData('photoId');
+      if (!photoId || !currentPage) return;
 
-    // Find first empty slot
-    const emptySlotIndex = currentPage.slots.findIndex(slot => !slot.photoId);
-    if (emptySlotIndex !== -1) {
-      dispatch(assignPhotoToSlot({
-        pageIndex: currentPageIndex,
-        slotIndex: emptySlotIndex,
-        photoId
-      }));
-      dispatch(selectSlot({ pageIndex: currentPageIndex, slotIndex: emptySlotIndex }));
-    }
-  }, [dispatch, currentPage, currentPageIndex]);
+      // Find first empty slot
+      const emptySlotIndex = currentPage.slots.findIndex(
+        (slot) => !slot.photoId
+      );
+      if (emptySlotIndex !== -1) {
+        dispatch(
+          assignPhotoToSlot({
+            pageIndex: currentPageIndex,
+            slotIndex: emptySlotIndex,
+            photoId,
+          })
+        );
+        dispatch(
+          selectSlot({ pageIndex: currentPageIndex, slotIndex: emptySlotIndex })
+        );
+      }
+    },
+    [dispatch, currentPage, currentPageIndex]
+  );
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -316,32 +358,35 @@ export function EditorCanvas() {
             />
 
             {/* Render slots */}
-            {currentPage && layout && currentPage.slots.map((slot, index) => {
-              const slotDef = layout.slots[index];
-              if (!slotDef) return null;
+            {currentPage &&
+              layout &&
+              currentPage.slots.map((slot, index) => {
+                const slotDef = layout.slots[index];
+                if (!slotDef) return null;
 
-              const photo = slot.photoId
-                ? photos.find(p => p.id === slot.photoId)
-                : null;
+                const photo = slot.photoId
+                  ? photos.find((p) => p.id === slot.photoId)
+                  : null;
 
-              const isSelected = selectedSlot?.pageIndex === currentPageIndex &&
-                                 selectedSlot?.slotIndex === index;
+                const isSelected =
+                  selectedSlot?.pageIndex === currentPageIndex &&
+                  selectedSlot?.slotIndex === index;
 
-              return (
-                <PhotoSlot
-                  key={slot.id}
-                  slot={slot}
-                  slotDef={slotDef}
-                  slotIndex={index}
-                  pageIndex={currentPageIndex}
-                  photo={photo}
-                  isSelected={isSelected}
-                  stageWidth={stageSize.width}
-                  stageHeight={stageSize.height}
-                  onSelect={handleSlotSelect}
-                />
-              );
-            })}
+                return (
+                  <PhotoSlot
+                    key={slot.id}
+                    slot={slot}
+                    slotDef={slotDef}
+                    slotIndex={index}
+                    pageIndex={currentPageIndex}
+                    photo={photo}
+                    isSelected={isSelected}
+                    stageWidth={stageSize.width}
+                    stageHeight={stageSize.height}
+                    onSelect={handleSlotSelect}
+                  />
+                );
+              })}
           </Layer>
         </Stage>
       </div>

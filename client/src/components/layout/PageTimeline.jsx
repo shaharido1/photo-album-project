@@ -14,7 +14,15 @@ import { selectAllPhotos } from '@/features/photos/photosSlice';
 import { getLayoutById } from '@/features/layouts/layoutTemplates';
 import { cn } from '@/lib/utils';
 
-function PageThumbnail({ page, pageIndex, isCurrent, photos, onClick, onRemove, canRemove }) {
+function PageThumbnail({
+  page,
+  pageIndex,
+  isCurrent,
+  photos,
+  onClick,
+  onRemove,
+  canRemove,
+}) {
   const layout = getLayoutById(page.layoutId);
 
   return (
@@ -22,7 +30,9 @@ function PageThumbnail({ page, pageIndex, isCurrent, photos, onClick, onRemove, 
       onClick={onClick}
       className={cn(
         'relative flex-shrink-0 w-16 h-16 rounded-md border-2 cursor-pointer transition-all hover:border-primary/50 group',
-        isCurrent ? 'border-primary ring-2 ring-primary/20' : 'border-muted-foreground/25',
+        isCurrent
+          ? 'border-primary ring-2 ring-primary/20'
+          : 'border-muted-foreground/25',
         'bg-background overflow-hidden'
       )}
       style={{ backgroundColor: page.background }}
@@ -32,7 +42,7 @@ function PageThumbnail({ page, pageIndex, isCurrent, photos, onClick, onRemove, 
         {layout?.slots.map((slotDef, i) => {
           const slot = page.slots[i];
           const photo = slot?.photoId
-            ? photos.find(p => p.id === slot.photoId)
+            ? photos.find((p) => p.id === slot.photoId)
             : null;
 
           return (

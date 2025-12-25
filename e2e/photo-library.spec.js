@@ -5,7 +5,9 @@ test.describe('Photo Library', () => {
     await page.goto('/');
 
     // Wait for photos to load
-    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     // Check multiple photos are visible
     const photos = page.locator('img[loading="lazy"]');
@@ -14,7 +16,9 @@ test.describe('Photo Library', () => {
 
   test('should select photo on click', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     // Click on first photo to select
     await page.locator('img[loading="lazy"]').first().click();
@@ -25,7 +29,9 @@ test.describe('Photo Library', () => {
 
   test('should select multiple photos', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     // Click on first and second photos
     await page.locator('img[loading="lazy"]').nth(0).click();
@@ -37,7 +43,9 @@ test.describe('Photo Library', () => {
 
   test('should deselect photo on second click', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
+      timeout: 10000,
+    });
 
     // Click to select, then click again to deselect
     await page.locator('img[loading="lazy"]').first().click();

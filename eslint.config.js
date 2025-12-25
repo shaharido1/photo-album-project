@@ -49,6 +49,7 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
       ...reactHooksPlugin.configs.recommended.rules,
+      'react/prop-types': 'off',
     },
   },
 ];

@@ -18,6 +18,15 @@ const photosSlice = createSlice({
   name: 'photos',
   initialState,
   reducers: {
+    addPhotos: (state, action) => {
+      // Add uploaded photos to the beginning of the array
+      state.items.unshift(...action.payload);
+    },
+    deletePhoto: (state, action) => {
+      const photoId = action.payload;
+      state.items = state.items.filter((photo) => photo.id !== photoId);
+      state.selectedIds = state.selectedIds.filter((id) => id !== photoId);
+    },
     selectPhoto: (state, action) => {
       const photoId = action.payload;
       if (!state.selectedIds.includes(photoId)) {
@@ -60,6 +69,8 @@ const photosSlice = createSlice({
 });
 
 export const {
+  addPhotos,
+  deletePhoto,
   selectPhoto,
   deselectPhoto,
   togglePhotoSelection,

@@ -107,7 +107,9 @@ describe('App', () => {
       </Provider>
     );
 
-    expect(screen.getByRole('button', { name: /new album/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /new album/i })
+    ).toBeInTheDocument();
   });
 
   it('shows empty state message when no album is created', () => {

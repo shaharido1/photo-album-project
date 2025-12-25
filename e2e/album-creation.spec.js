@@ -42,7 +42,9 @@ test.describe('Album Creation', () => {
 
     // Verify it's selected (has border-primary class via visual inspection)
     // The preview should update to show the selected size
-    await expect(page.locator('.text-center .font-medium').filter({ hasText: '12×12"' })).toBeVisible();
+    await expect(
+      page.locator('.text-center .font-medium').filter({ hasText: '12×12"' })
+    ).toBeVisible();
   });
 
   test('should create a new album', async ({ page }) => {
@@ -77,7 +79,9 @@ test.describe('Album Creation', () => {
     await page.getByRole('button', { name: 'New Album' }).click();
 
     // Create Album button should be disabled when name is empty
-    await expect(page.getByRole('button', { name: 'Create Album' })).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: 'Create Album' })
+    ).toBeDisabled();
   });
 
   test('should close dialog on Cancel', async ({ page }) => {
@@ -89,7 +93,9 @@ test.describe('Album Creation', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
-  test('should show Save and Export buttons after album creation', async ({ page }) => {
+  test('should show Save and Export buttons after album creation', async ({
+    page,
+  }) => {
     await page.goto('/');
     await createAlbum(page);
 

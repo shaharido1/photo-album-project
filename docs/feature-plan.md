@@ -206,6 +206,115 @@ All UI components must:
 
 ---
 
+## Infrastructure Features (Planned)
+
+### 1. Authentication Layer
+
+**Goal:** Secure user authentication with Google federation
+
+- [ ] Google OAuth 2.0 integration
+- [ ] Sign in with Google button
+- [ ] Session management (JWT tokens)
+- [ ] Protected routes (frontend)
+- [ ] Auth middleware (backend API)
+- [ ] User profile storage
+- [ ] Sign out functionality
+- [ ] Token refresh handling
+
+**Technical Approach:**
+| Component | Technology |
+| --------- | ---------- |
+| OAuth Provider | Google Identity Services |
+| Backend Auth | Passport.js with Google Strategy |
+| Session Storage | JWT in httpOnly cookies |
+| Frontend Auth State | Redux slice + React Context |
+
+**Why Google OAuth:**
+- Users already need Google account for Photos API
+- Single sign-on for Photos + Drive access
+- No password management required
+- Trusted authentication provider
+
+---
+
+### 2. Database Layer
+
+**Goal:** Persistent storage for user data, albums, and preferences
+
+- [ ] Firebase project setup
+- [ ] Firestore database schema design
+- [ ] User document (profile, preferences)
+- [ ] Albums collection (metadata, page structure)
+- [ ] Photo references collection (Google Photos IDs, local uploads)
+- [ ] Security rules (user isolation)
+- [ ] Real-time sync for auto-save
+- [ ] Offline support (Firestore persistence)
+
+**Proposed Firestore Schema:**
+```
+users/
+  {userId}/
+    profile: { email, name, photoUrl, createdAt }
+    preferences: { theme, defaultAlbumSize }
+
+albums/
+  {albumId}/
+    ownerId: string
+    name: string
+    size: { width, height, unit }
+    pages: [{ layoutId, slots: [...], background }]
+    createdAt, updatedAt
+
+photos/
+  {photoId}/
+    ownerId: string
+    source: 'google' | 'upload'
+    googlePhotoId?: string
+    uploadUrl?: string
+    thumbnailUrl: string
+    metadata: { width, height, takenAt }
+```
+
+**Why Firebase/Firestore:**
+- Free tier generous (1GB storage, 50K reads/day)
+- Real-time sync built-in (great for auto-save)
+- Integrates seamlessly with Google Auth
+- No server management required
+- Offline persistence out of the box
+- Scales automatically
+
+---
+
+### 3. Google Photos API Integration
+
+**Goal:** Allow users to import photos from their Google Photos library
+
+- [ ] Google Photos API setup in Cloud Console
+- [ ] OAuth scopes for Photos access (`photoslibrary.readonly`)
+- [ ] Photo library browser UI
+- [ ] Album listing from Google Photos
+- [ ] Photo search/filter (by date, album)
+- [ ] Thumbnail fetching (for library view)
+- [ ] Full-resolution fetch (for export)
+- [ ] Pagination handling (large libraries)
+- [ ] Rate limiting / quota management
+- [ ] Error handling for expired tokens
+
+**API Endpoints Needed:**
+| Endpoint | Purpose |
+| -------- | ------- |
+| `GET /api/google/photos` | List user's photos (paginated) |
+| `GET /api/google/albums` | List user's Google Photos albums |
+| `GET /api/google/photos/:id` | Get photo metadata & download URL |
+| `GET /api/google/photos/:id/thumbnail` | Proxy thumbnail image |
+
+**Quota Considerations:**
+- Google Photos API: 10,000 requests/day free
+- Implement caching for thumbnails
+- Batch requests where possible
+
+---
+
 ## Technical Decisions (TBD)
 
 | Decision | Options | Chosen |
@@ -216,6 +325,9 @@ All UI components must:
 | Image Processing | Browser canvas, Sharp (server) | TBD |
 | Google APIs | Photos API, Drive API | Both |
 | State Management | Redux (existing), Zustand | Redux Toolkit |
+| Authentication | Google OAuth 2.0 | Planned |
+| Database | Firebase Firestore | Planned |
+| Auth Library | Passport.js / Firebase Auth | TBD |
 
 ---
 

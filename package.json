@@ -19,7 +19,11 @@
     "lint:fix": "eslint . --ext .js,.jsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,json,md}\"",
-    "check:deployment": "node scripts/check-deployment.js"
+    "check:deployment": "node scripts/check-deployment.js",
+    "debug:workflow": "node scripts/debug-github-workflow.js",
+    "debug:render": "node scripts/debug-render.js",
+    "debug:versions": "node scripts/debug-versions.js",
+    "debug:all": "node scripts/debug-versions.js && node scripts/debug-github-workflow.js && node scripts/debug-render.js"
   },
   "keywords": [
     "hello-world",
