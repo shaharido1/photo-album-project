@@ -27,7 +27,7 @@ jobs:
             client/package-lock.json
 
       - name: Install root dependencies
-        run: npm install eslint prettier eslint-plugin-react eslint-plugin-react-hooks
+        run: npm install eslint @eslint/js eslint-plugin-react eslint-plugin-react-hooks globals prettier
 
       - name: Install server dependencies
         run: npm ci
@@ -38,7 +38,7 @@ jobs:
         working-directory: ./client
 
       - name: Run ESLint
-        run: npx eslint . --ext .js,.jsx
+        run: npx eslint .
 
       - name: Run Prettier check
         run: npx prettier --check "**/*.{js,jsx,json}" --ignore-path .gitignore
