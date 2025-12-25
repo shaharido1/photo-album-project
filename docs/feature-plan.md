@@ -67,7 +67,7 @@ All UI components must:
   - 3 photos (various arrangements)
   - 4 photos (grid)
   - 6 photos (grid)
-  - Collage (freeform)
+  - [ ] Collage (freeform) - **Not implemented**
 - [x] Apply template to page
 - [x] Drag-and-drop photos into template slots
 
@@ -238,6 +238,69 @@ All UI components must:
 - **Safe Zone**: Keep important content 5mm from edge
 - **Color**: RGB for digital, CMYK for offset printing
 - **Format**: PDF/X-1a or PDF/X-4 for professional printing
+
+---
+
+## Implementation Status & Gaps (Last Updated: Dec 2024)
+
+### Currently Implemented Features
+
+| Feature Area | Status | Notes |
+| ------------ | ------ | ----- |
+| Photo library grid | ✅ Done | 12 mock photos, thumbnails with lazy loading |
+| Photo multi-select | ✅ Done | Click to toggle, visual checkmark indicator |
+| Album creation dialog | ✅ Done | Name input, 5 size presets with preview |
+| Page timeline | ✅ Done | Add/remove pages, navigation, thumbnails |
+| Layout templates | ✅ Done | 8 templates (1-6 photos per page) |
+| Background colors | ✅ Done | White, cream, black, gray presets |
+| Photo placement | ✅ Done | Drag-drop to canvas, double-click to add |
+| Photo manipulation | ✅ Done | Zoom slider, rotate, reset position |
+| Remove photo from slot | ✅ Done | Button in properties panel |
+| Dark mode | ✅ Done | Toggle in header |
+
+### Missing MVP Features (High Priority)
+
+| Feature | Status | Gap Description |
+| ------- | ------ | --------------- |
+| Upload photos | ❌ Missing | Button exists but no upload functionality |
+| Google Photos import | ❌ Missing | Button exists but no OAuth/API integration |
+| Delete photos from library | ❌ Missing | No delete button or functionality |
+| Swap photos between slots | ❌ Missing | No drag-between-slots capability |
+| Collage (freeform) layout | ❌ Missing | Only fixed grid layouts exist |
+| Text/captions | ❌ Missing | No text overlay capability |
+| Album flip-through view | ❌ Missing | Only page-by-page editing view |
+| Page zoom in/out | ❌ Missing | Canvas is fixed size |
+| PDF Export | ❌ Missing | Export button exists but no functionality |
+| Image Package Export | ❌ Missing | No ZIP export capability |
+| Save to Google Drive | ❌ Missing | Save button exists but no functionality |
+| Load from Google Drive | ❌ Missing | No project loading capability |
+| Auto-save drafts | ❌ Missing | No local or cloud persistence |
+| Auto-arrange photos | ❌ Missing | No smart layout selection |
+
+### UI/UX Gaps Identified
+
+| Issue | Description | Priority |
+| ----- | ----------- | -------- |
+| Upload button non-functional | Clicking does nothing, no file picker opens | High |
+| Google button non-functional | Clicking does nothing, no OAuth flow | High |
+| Save button non-functional | Shows "Saved" text but doesn't persist | High |
+| Export button non-functional | Opens nothing, no export dialog | High |
+| No loading indicator | When fetching photos, loading state could be clearer | Medium |
+| No error recovery | Photo API failures show error but retry could be more prominent | Medium |
+| Rotation not visual | Rotate button dispatches action but visual rotation not implemented in canvas | Medium |
+| No keyboard shortcuts | No documented or implemented shortcuts | Low |
+
+### E2E Test Coverage
+
+Tests are organized into the following spec files:
+- `app.spec.js` - Initial load, layout, API endpoints (5 tests)
+- `photo-library.spec.js` - Photo grid, selection, buttons (5 tests)
+- `album-creation.spec.js` - Dialog, sizes, creation flow (8 tests)
+- `page-timeline.spec.js` - Page add/remove/navigate (4 tests)
+- `editor-canvas.spec.js` - Canvas interactions, drag-drop (4 tests)
+- `properties-panel.spec.js` - Layouts, backgrounds, photo controls, dark mode (10 tests)
+
+**Total: 36 E2E tests covering all implemented functionality**
 
 ---
 

@@ -30,6 +30,7 @@ npm-debug.log*
 coverage/
 test-results/
 playwright-report/
+.playwright-mcp/
 
 # Docker
 .docker/
