@@ -27,9 +27,13 @@ async function checkDeployment() {
 
     if (!contentType || !contentType.includes('application/json')) {
       console.log(`❌ Deployed version: ENDPOINT NOT FOUND`);
-      console.log(`   (Got HTML instead of JSON - endpoint may not be deployed)\n`);
+      console.log(
+        `   (Got HTML instead of JSON - endpoint may not be deployed)\n`
+      );
       console.log('⚠️  DEPLOYMENT MISMATCH DETECTED');
-      console.log('   The /api/version endpoint is not available on production.');
+      console.log(
+        '   The /api/version endpoint is not available on production.'
+      );
       console.log('   This indicates the latest code has not been deployed.\n');
       await checkEndpoints();
       return { mismatch: true, reason: 'endpoint_missing' };
@@ -43,7 +47,12 @@ async function checkDeployment() {
       console.log('⚠️  VERSION MISMATCH DETECTED');
       console.log(`   Local: ${localVersion}`);
       console.log(`   Deployed: ${deployedVersion}\n`);
-      return { mismatch: true, reason: 'version_mismatch', local: localVersion, deployed: deployedVersion };
+      return {
+        mismatch: true,
+        reason: 'version_mismatch',
+        local: localVersion,
+        deployed: deployedVersion,
+      };
     }
 
     console.log('✅ Versions match!');
@@ -88,7 +97,9 @@ checkDeployment().then((result) => {
   console.log('\n' + '='.repeat(50));
   if (result.mismatch) {
     console.log('\n🚨 DEPLOYMENT ISSUE DETECTED');
-    console.log('   See docs/deployment-debugging.md for troubleshooting steps.\n');
+    console.log(
+      '   See docs/deployment-debugging.md for troubleshooting steps.\n'
+    );
     process.exit(1);
   } else {
     console.log('\n✅ Deployment looks healthy!\n');

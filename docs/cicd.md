@@ -60,6 +60,7 @@ cd server && npm test
 ```
 
 Tests:
+
 - `GET /api/hello` - Returns greeting message
 - `GET /api/health` - Returns health status
 
@@ -72,6 +73,7 @@ cd client && npm test
 ```
 
 Tests:
+
 - Loading state rendering
 - Success state with greeting message
 - Error state handling
@@ -90,6 +92,7 @@ Only runs on `main` branch after tests pass.
 ```
 
 **Image Tags:**
+
 - `latest` - Always points to newest build
 - `<sha>` - Git commit SHA for versioning
 
@@ -109,10 +112,10 @@ Optional step that triggers Render deployment via webhook.
 
 ## GitHub Secrets Required
 
-| Secret | Description | How to Get |
-|--------|-------------|------------|
-| `GITHUB_TOKEN` | Auto-provided by GitHub Actions | Automatic |
-| `RENDER_DEPLOY_HOOK_URL` | Render deploy webhook | Render Dashboard → Service → Settings → Deploy Hook |
+| Secret                   | Description                     | How to Get                                          |
+| ------------------------ | ------------------------------- | --------------------------------------------------- |
+| `GITHUB_TOKEN`           | Auto-provided by GitHub Actions | Automatic                                           |
+| `RENDER_DEPLOY_HOOK_URL` | Render deploy webhook           | Render Dashboard → Service → Settings → Deploy Hook |
 
 ## Render Configuration
 
@@ -135,6 +138,7 @@ services:
 ```
 
 **Key Settings:**
+
 - `runtime: image` - Pulls pre-built image instead of building
 - `autoDeploy: false` - Deploys are triggered by GitHub Actions
 

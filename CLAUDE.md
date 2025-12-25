@@ -25,6 +25,7 @@
 For any new feature or bug fix, you MUST:
 
 1. **Run Linting**
+
    ```bash
    npx eslint .                           # Run ESLint
    npx prettier --check "**/*.{js,jsx,json}"  # Check Prettier formatting
@@ -36,12 +37,14 @@ For any new feature or bug fix, you MUST:
    - Client: Add tests in component files (`*.test.jsx`)
 
 3. **Run Unit Tests**
+
    ```bash
    cd server && npm test       # Server unit tests
    cd client && npm test       # Client unit tests
    ```
 
 4. **Run E2E Tests with Playwright**
+
    ```bash
    npm run test:e2e            # Run Playwright E2E tests
    ```
@@ -59,11 +62,11 @@ For any new feature or bug fix, you MUST:
 
 ### Test Files Location
 
-| Type | Location | Framework |
-|------|----------|-----------|
-| Server Unit | `server/tests/*.test.js` | Jest |
+| Type        | Location                   | Framework  |
+| ----------- | -------------------------- | ---------- |
+| Server Unit | `server/tests/*.test.js`   | Jest       |
 | Client Unit | `client/src/**/*.test.jsx` | Jest + RTL |
-| E2E | `e2e/*.spec.js` | Playwright |
+| E2E         | `e2e/*.spec.js`            | Playwright |
 
 ## Tech Stack
 
@@ -118,6 +121,7 @@ Push → GitHub Actions (lint/test/e2e/build) → GHCR → Render (pull & deploy
 ```
 
 Pipeline jobs:
+
 1. **Lint** - ESLint + Prettier
 2. **Test Server** - Jest unit tests
 3. **Test Client** - Jest + RTL unit tests

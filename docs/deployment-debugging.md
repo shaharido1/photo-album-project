@@ -11,6 +11,7 @@ npm run check:deployment
 ```
 
 This will:
+
 1. Compare local `package.json` version with deployed `/api/version`
 2. Check if all API endpoints are available
 3. Report any mismatches
@@ -22,6 +23,7 @@ This will:
 **Symptom:** API endpoints return HTML instead of JSON (the frontend is served instead)
 
 **Diagnosis:**
+
 ```bash
 # Check endpoint locally
 curl http://localhost:3001/api/foo
@@ -58,6 +60,7 @@ gh run watch <run-id>
 Or visit: https://github.com/shaharido1/photo-album-project/actions
 
 **Look for:**
+
 - Did the latest push trigger a workflow?
 - Did all jobs pass (lint, test, build, push)?
 - Did the deploy step run?
@@ -74,6 +77,7 @@ gh api /user/packages/container/photo-album-project/versions --jq '.[0]'
 Or visit: https://github.com/shaharido1/photo-album-project/pkgs/container/photo-album-project
 
 **Look for:**
+
 - When was the `latest` tag updated?
 - Does the commit SHA match your latest commit?
 
@@ -168,12 +172,12 @@ Verify Render is pulling from GHCR correctly:
 
 ## Render Configuration Reference
 
-| Setting | Value |
-|---------|-------|
-| Service ID | `srv-d56juo6uk2gs73ci8bgg` |
-| Owner ID | `tea-d56jpkeuk2gs73ci5rdg` |
-| Image URL | `ghcr.io/shaharido1/photo-album-project:latest` |
-| Live URL | https://photo-album-project.onrender.com |
+| Setting    | Value                                           |
+| ---------- | ----------------------------------------------- |
+| Service ID | `srv-d56juo6uk2gs73ci8bgg`                      |
+| Owner ID   | `tea-d56jpkeuk2gs73ci5rdg`                      |
+| Image URL  | `ghcr.io/shaharido1/photo-album-project:latest` |
+| Live URL   | https://photo-album-project.onrender.com        |
 
 ---
 
@@ -181,10 +185,10 @@ Verify Render is pulling from GHCR correctly:
 
 Ensure these are set in Render:
 
-| Variable | Value |
-|----------|-------|
+| Variable   | Value        |
+| ---------- | ------------ |
 | `NODE_ENV` | `production` |
-| `PORT` | `10000` |
+| `PORT`     | `10000`      |
 
 ---
 

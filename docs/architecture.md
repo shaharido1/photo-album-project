@@ -4,16 +4,16 @@ This document describes the architecture of the Hello World full-stack applicati
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Backend | Node.js + Express | REST API server & static file serving |
-| Frontend | React + Redux Toolkit + Vite | Single-page application |
-| Testing | Jest + React Testing Library | Unit & component tests |
-| Linting | ESLint + Prettier | Code quality & formatting |
-| Containerization | Docker | Production deployment |
-| CI/CD | GitHub Actions | Automated testing & deployment |
-| Hosting | Render | Cloud hosting (free tier) |
-| Registry | GitHub Container Registry (GHCR) | Docker image storage |
+| Layer            | Technology                       | Purpose                               |
+| ---------------- | -------------------------------- | ------------------------------------- |
+| Backend          | Node.js + Express                | REST API server & static file serving |
+| Frontend         | React + Redux Toolkit + Vite     | Single-page application               |
+| Testing          | Jest + React Testing Library     | Unit & component tests                |
+| Linting          | ESLint + Prettier                | Code quality & formatting             |
+| Containerization | Docker                           | Production deployment                 |
+| CI/CD            | GitHub Actions                   | Automated testing & deployment        |
+| Hosting          | Render                           | Cloud hosting (free tier)             |
+| Registry         | GitHub Container Registry (GHCR) | Docker image storage                  |
 
 ## Project Structure
 
@@ -86,11 +86,11 @@ photo-album-project/
 
 ## API Endpoints
 
-| Endpoint | Method | Description | Response |
-|----------|--------|-------------|----------|
-| `/api/hello` | GET | Returns greeting message | `{ "message": "Hello World" }` |
-| `/api/health` | GET | Health check | `{ "status": "ok", "timestamp": "..." }` |
-| `/*` | GET | Serves React app (static files) | HTML/JS/CSS |
+| Endpoint      | Method | Description                     | Response                                 |
+| ------------- | ------ | ------------------------------- | ---------------------------------------- |
+| `/api/hello`  | GET    | Returns greeting message        | `{ "message": "Hello World" }`           |
+| `/api/health` | GET    | Health check                    | `{ "status": "ok", "timestamp": "..." }` |
+| `/*`          | GET    | Serves React app (static files) | HTML/JS/CSS                              |
 
 ## Redux State Structure
 
@@ -109,6 +109,7 @@ photo-album-project/
 ### Production Image (root `Dockerfile`)
 
 Multi-stage build that:
+
 1. Builds React client with Vite
 2. Creates minimal Node.js image with server + client dist
 
@@ -123,15 +124,16 @@ FROM node:20-alpine
 ### Development (docker-compose.yml)
 
 Runs client and server separately with hot reload:
+
 - Client: Vite dev server on port 3000
 - Server: Node.js with `--watch` on port 3001
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3001 | Server port (Render uses 10000) |
-| `NODE_ENV` | development | Environment mode |
+| Variable   | Default     | Description                     |
+| ---------- | ----------- | ------------------------------- |
+| `PORT`     | 3001        | Server port (Render uses 10000) |
+| `NODE_ENV` | development | Environment mode                |
 
 See [.env.example](../.env.example) for full list including CI/CD secrets.
 
