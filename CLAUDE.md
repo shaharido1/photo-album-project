@@ -10,6 +10,7 @@
 
 - [Architecture Overview](docs/architecture.md) - Tech stack, project structure, and application flow
 - [CI/CD Pipeline](docs/cicd.md) - GitHub Actions, Render deployment, and manual operations
+- [Versioning](docs/versioning.md) - Semantic versioning, git hooks, and Docker image tagging
 - [Playwright MCP Guide](docs/playwright-mcp.md) - Interactive testing with Playwright MCP tools
 
 ## Development Guidelines
@@ -87,6 +88,11 @@ npm run test:e2e            # Run E2E tests
 
 # Docker
 docker-compose up           # Run full stack locally
+
+# Version Management
+npm run version:bump        # Bump patch version (auto on push to main)
+npm run version:bump:minor  # Bump minor version
+npm run version:bump:major  # Bump major version
 
 # Deployment (via Render API)
 curl -X POST 'https://api.render.com/v1/services/srv-d56juo6uk2gs73ci8bgg/deploys' \

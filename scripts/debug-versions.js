@@ -119,6 +119,12 @@ async function getGhcrVersion() {
       if (shaTag) {
         console.log(`   Commit SHA: ${shaTag}`);
       }
+
+      // Extract semver version from tags if present
+      const semverTag = tags.find((tag) => /^\d+\.\d+\.\d+$/.test(tag));
+      if (semverTag) {
+        console.log(`   Version: ${semverTag}`);
+      }
       console.log('');
     });
 
@@ -128,6 +134,7 @@ async function getGhcrVersion() {
     const latestSha = latestTags.find(
       (tag) => tag.length === 7 && /^[a-f0-9]+$/.test(tag)
     );
+    const latestSemver = latestTags.find((tag) => /^\d+\.\d+\.\d+$/.test(tag));
 
     console.log('='.repeat(80));
 
@@ -135,6 +142,7 @@ async function getGhcrVersion() {
       id: latest.id,
       tags: latestTags,
       sha: latestSha,
+      semver: latestSemver,
       createdAt: latest.created_at,
       hasLatestTag: latestTags.includes('latest'),
     };
@@ -238,22 +246,25 @@ function compareVersions(local, ghcr, deployed, workflow) {
   console.log('\n🔍 Version Comparison Summary\n');
   console.log('='.repeat(80));
 
+  const localVersion = local?.version || 'N/A';
   const localSha = local?.shortSha || 'N/A';
+  const ghcrVersion = ghcr?.semver || 'N/A';
   const ghcrSha = ghcr?.sha || 'N/A';
+  const deployedVersion = deployed?.version || 'N/A';
   const deployedSha = deployed?.gitSha?.substring(0, 7) || 'N/A';
   const workflowSha = workflow?.shortSha || 'N/A';
 
-  console.log('Component        | SHA     | Status');
-  console.log('-'.repeat(50));
-  console.log(`Local HEAD       | ${localSha.padEnd(7)} |`);
+  console.log('Component        | Version   | SHA     | Status');
+  console.log('-'.repeat(65));
+  console.log(`Local HEAD       | ${localVersion.padEnd(9)} | ${localSha.padEnd(7)} |`);
   console.log(
-    `Latest CI Run    | ${workflowSha.padEnd(7)} | ${workflow?.conclusion || 'N/A'}`
+    `Latest CI Run    | ${''.padEnd(9)} | ${workflowSha.padEnd(7)} | ${workflow?.conclusion || 'N/A'}`
   );
   console.log(
-    `GHCR :latest     | ${ghcrSha.padEnd(7)} | ${ghcr?.hasLatestTag ? 'Has :latest tag' : 'No :latest tag'}`
+    `GHCR :latest     | ${ghcrVersion.padEnd(9)} | ${ghcrSha.padEnd(7)} | ${ghcr?.hasLatestTag ? 'Has :latest tag' : 'No :latest tag'}`
   );
   console.log(
-    `Render Deployed  | ${deployedSha.padEnd(7)} | ${deployed?.available ? 'Available' : 'Unavailable'}`
+    `Render Deployed  | ${deployedVersion.padEnd(9)} | ${deployedSha.padEnd(7)} | ${deployed?.available ? 'Available' : 'Unavailable'}`
   );
 
   console.log('\n' + '-'.repeat(80));
@@ -284,6 +295,31 @@ function compareVersions(local, ghcr, deployed, workflow) {
     issues.push({
       level: 'error',
       message: 'GHCR image differs from deployed version',
+      fix: 'Trigger Render deployment: node scripts/debug-render.js --deploy',
+    });
+  }
+
+  // Check if versions match across environments
+  if (
+    localVersion !== 'N/A' &&
+    ghcrVersion !== 'N/A' &&
+    localVersion !== ghcrVersion
+  ) {
+    issues.push({
+      level: 'warn',
+      message: `Local version (${localVersion}) differs from GHCR (${ghcrVersion})`,
+      fix: 'Push to main - version will auto-bump on deploy',
+    });
+  }
+
+  if (
+    ghcrVersion !== 'N/A' &&
+    deployedVersion !== 'N/A' &&
+    ghcrVersion !== deployedVersion
+  ) {
+    issues.push({
+      level: 'error',
+      message: `GHCR version (${ghcrVersion}) differs from deployed (${deployedVersion})`,
       fix: 'Trigger Render deployment: node scripts/debug-render.js --deploy',
     });
   }

@@ -49,11 +49,21 @@ photo-album-project/
 │
 ├── docs/                       # Documentation
 │   ├── architecture.md         # This file
-│   └── cicd.md                 # CI/CD documentation
+│   ├── cicd.md                 # CI/CD documentation
+│   └── versioning.md           # Version management
 │
 ├── .github/
 │   └── workflows/
 │       └── ci.yml              # GitHub Actions pipeline
+│
+├── scripts/                    # Utility scripts
+│   ├── bump-version.js         # Version bumping script
+│   ├── install-hooks.js        # Git hooks installer
+│   ├── hooks/
+│   │   └── pre-push            # Auto version bump hook
+│   ├── check-deployment.js     # Deployment checker
+│   ├── debug-versions.js       # Version comparison tool
+│   └── debug-render.js         # Render debug tool
 │
 ├── Dockerfile                  # Production combined image
 ├── docker-compose.yml          # Local development setup
@@ -111,15 +121,26 @@ photo-album-project/
 Multi-stage build that:
 
 1. Builds React client with Vite
-2. Creates minimal Node.js image with server + client dist
+2. Compiles TypeScript server code
+3. Creates minimal Node.js image with server + client dist
 
 ```dockerfile
-FROM node:20-alpine AS client-builder
+FROM node:22-alpine AS client-builder
 # ... builds client
 
-FROM node:20-alpine
-# ... copies server + client/dist
+FROM node:22-alpine
+# ... builds server TypeScript, copies client/dist
 ```
+
+**Image Tags:**
+
+| Tag           | Description                        | Example                                          |
+| ------------- | ---------------------------------- | ------------------------------------------------ |
+| `<version>`   | Semantic version from package.json | `ghcr.io/shaharido1/photo-album-project:1.0.1`   |
+| `<sha>`       | Git commit SHA                     | `ghcr.io/shaharido1/photo-album-project:abc1234` |
+| `latest`      | Always points to newest build      | `ghcr.io/shaharido1/photo-album-project:latest`  |
+
+See [Versioning](versioning.md) for version management details.
 
 ### Development (docker-compose.yml)
 
@@ -140,4 +161,5 @@ See [.env.example](../.env.example) for full list including CI/CD secrets.
 ## Related Documentation
 
 - [CI/CD Pipeline](./cicd.md) - Detailed CI/CD documentation
+- [Versioning](./versioning.md) - Version management and git hooks
 - [Environment Setup](../.env.example) - Environment variables reference

@@ -9,6 +9,7 @@ The CI/CD pipeline uses **GitHub Actions** for testing and building, and **Rende
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Push to GitHub (main)                        │
+│              (Pre-push hook bumps version)                      │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -18,9 +19,11 @@ The CI/CD pipeline uses **GitHub Actions** for testing and building, and **Rende
 │  1. Lint        │ ESLint + Prettier check                       │
 │  2. Test Server │ Jest tests for API endpoints                  │
 │  3. Test Client │ Jest + RTL tests for React components         │
-│  4. Build       │ Docker multi-stage build                      │
-│  5. Push        │ Push image to ghcr.io                         │
-│  6. Deploy      │ Trigger Render deploy hook (optional)         │
+│  4. Test E2E    │ Playwright browser tests                      │
+│  5. Build       │ Docker multi-stage build (with version)       │
+│  6. Push        │ Push image to ghcr.io (version + sha tags)    │
+│  7. Tag         │ Create git tag (v1.0.1)                       │
+│  8. Deploy      │ Trigger Render deploy hook (optional)         │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -93,10 +96,41 @@ Only runs on `main` branch after tests pass.
 
 **Image Tags:**
 
+- `<version>` - Semantic version from package.json (e.g., `1.0.1`)
 - `latest` - Always points to newest build
-- `<sha>` - Git commit SHA for versioning
+- `<sha>` - Git commit SHA for traceability
 
-### 5. Trigger Render Deploy
+See [Versioning](versioning.md) for details on version management.
+
+### 5. Create Git Tag
+
+After pushing the Docker image, the pipeline creates a Git tag for the version:
+
+```yaml
+- name: Create git tag for version
+  run: |
+    VERSION="v${{ steps.version.outputs.version }}"
+    if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+      git tag "$VERSION"
+      git push origin "$VERSION"
+    fi
+```
+
+This creates tags like `v1.0.1`, `v1.0.2`, etc. for each deployment.
+
+**List version tags:**
+
+```bash
+git tag -l "v*"
+```
+
+**Checkout a specific version:**
+
+```bash
+git checkout v1.0.1
+```
+
+### 6. Trigger Render Deploy
 
 Optional step that triggers Render deployment via webhook.
 
@@ -177,5 +211,12 @@ The complete workflow is defined in [.github/workflows/ci.yml](../.github/workfl
 1. **No Redundant Builds** - GitHub builds once, Render just pulls
 2. **Fast Deploys** - ~10 seconds on Render vs ~2 minutes building
 3. **Consistent Images** - Same image tested in CI is deployed to production
-4. **Audit Trail** - Docker images tagged with commit SHA
-5. **Rollback Capability** - Can deploy any previous image by SHA
+4. **Semantic Versioning** - Every deploy has a unique version (1.0.1, 1.0.2, etc.)
+5. **Audit Trail** - Docker images tagged with version + commit SHA
+6. **Rollback Capability** - Can deploy any previous image by version or SHA
+7. **Git Tags** - Each version creates a git tag for easy reference
+
+## Related Documentation
+
+- [Versioning](versioning.md) - Version management, hooks, and tagging
+- [Architecture](architecture.md) - Tech stack and project structure

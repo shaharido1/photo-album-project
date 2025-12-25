@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Pre-push hook: Automatically bump version when pushing to main
+# This hook runs before git push and bumps the patch version
+
+# Get the current branch
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Get the remote being pushed to
+remote="$1"
+url="$2"
+
+# Read stdin to get ref information
+while read local_ref local_sha remote_ref remote_sha
+do
+    # Check if we're pushing to main branch
+    if [[ "$remote_ref" == "refs/heads/main" ]]; then
+        echo "Pushing to main branch - bumping version..."
+
+        # Check if there are uncommitted changes (other than what we're about to create)
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo "Error: You have uncommitted changes. Please commit or stash them first."
+            exit 1
+        fi
+
+        # Run the version bump script
+        node scripts/bump-version.js patch
+
+        if [ $? -ne 0 ]; then
+            echo "Error: Version bump failed"
+            exit 1
+        fi
+
+        # Stage the updated package.json files
+        git add package.json client/package.json server/package.json
+
+        # Get the new version
+        new_version=$(node -e "console.log(require('./package.json').version)")
+
+        # Amend the last commit to include version bump
+        # Using --no-verify to avoid recursive hook calls
+        git commit --amend --no-edit --no-verify
+
+        echo "Version bumped to $new_version and included in commit"
+    fi
+done
+
+exit 0

@@ -14,19 +14,29 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+# Copy root package.json first to get version info
+COPY package.json ./root-package.json
+
 COPY server/package*.json ./
 
 RUN npm ci --only=production
 
+# Build server TypeScript
+COPY server/tsconfig.json ./tsconfig.json
 COPY server/src ./src
+RUN npx tsc
 
 COPY --from=client-builder /app/client/dist ./client/dist
 
-COPY package.json ./root-package.json
+# Extract version from package.json for labeling
+ARG APP_VERSION
+LABEL org.opencontainers.image.version="${APP_VERSION}"
+LABEL org.opencontainers.image.title="Photo Album Project"
+LABEL org.opencontainers.image.description="Photo Album full-stack application"
 
 ENV NODE_ENV=production
 ENV PORT=3001
 
 EXPOSE 3001
 
-CMD ["node", "src/index.js"]
+CMD ["node", "dist/index.js"]
