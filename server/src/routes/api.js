@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -7,9 +7,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read version from root package.json
-const rootPackageJson = JSON.parse(
-  readFileSync(join(__dirname, '../../../package.json'), 'utf-8')
-);
+// In production (Docker), the file is at /app/root-package.json
+// In development, it's at the project root (../../.. from routes/)
+const productionPath = '/app/root-package.json';
+const developmentPath = join(__dirname, '../../../package.json');
+const packageJsonPath = existsSync(productionPath)
+  ? productionPath
+  : developmentPath;
+const rootPackageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const appVersion = rootPackageJson.version;
 
 const router = Router();

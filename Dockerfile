@@ -22,6 +22,8 @@ COPY server/src ./src
 
 COPY --from=client-builder /app/client/dist ./client/dist
 
+COPY package.json ./root-package.json
+
 ENV NODE_ENV=production
 ENV PORT=3001
 
