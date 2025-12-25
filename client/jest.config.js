@@ -1,16 +1,16 @@
 export default {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^react-konva$': '<rootDir>/src/__mocks__/react-konva.js',
-    '^konva$': '<rootDir>/src/__mocks__/konva.js',
+    '^react-konva$': '<rootDir>/src/__mocks__/react-konva.tsx',
+    '^konva$': '<rootDir>/src/__mocks__/konva.ts',
   },
   transform: {
-    '^.+\\.(js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx)$': 'babel-jest',
   },
-  testMatch: ['**/*.test.{js,jsx}'],
-  collectCoverageFrom: ['src/**/*.{js,jsx}', '!src/main.jsx'],
+  testMatch: ['**/*.test.{ts,tsx}'],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/main.tsx'],
   coverageDirectory: 'coverage',
 };

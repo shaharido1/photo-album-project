@@ -10,6 +10,19 @@ COPY client/ .
 
 RUN npm run build
 
+FROM node:22-alpine AS server-builder
+
+WORKDIR /app
+
+COPY server/package*.json ./
+
+RUN npm ci
+
+# Build server TypeScript
+COPY server/tsconfig.json ./tsconfig.json
+COPY server/src ./src
+RUN npx tsc
+
 FROM node:22-alpine
 
 WORKDIR /app
@@ -21,10 +34,8 @@ COPY server/package*.json ./
 
 RUN npm ci --only=production
 
-# Build server TypeScript
-COPY server/tsconfig.json ./tsconfig.json
-COPY server/src ./src
-RUN npx tsc
+# Copy compiled server from builder
+COPY --from=server-builder /app/dist ./dist
 
 COPY --from=client-builder /app/client/dist ./client/dist
 

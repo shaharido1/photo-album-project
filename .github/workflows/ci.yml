@@ -12,7 +12,7 @@ env:
 
 jobs:
   lint:
-    name: Lint
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
             client/package-lock.json
 
       - name: Install root dependencies
-        run: npm install eslint @eslint/js eslint-plugin-react eslint-plugin-react-hooks globals prettier
+        run: npm install eslint @eslint/js eslint-plugin-react eslint-plugin-react-hooks globals prettier typescript typescript-eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
       - name: Install server dependencies
         run: npm ci
@@ -37,11 +37,14 @@ jobs:
         run: npm ci
         working-directory: ./client
 
+      - name: Run TypeScript typecheck
+        run: npm run typecheck
+
       - name: Run ESLint
         run: npx eslint .
 
       - name: Run Prettier check
-        run: npx prettier --check "**/*.{js,jsx,json}" --ignore-path .gitignore
+        run: npx prettier --check "**/*.{js,jsx,ts,tsx,json}" --ignore-path .gitignore
 
   test-server:
     name: Test Server

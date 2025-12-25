@@ -1,8 +1,22 @@
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 export default {
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  transform: {},
-  moduleFileExtensions: ['js'],
-  testMatch: ['**/tests/**/*.test.js'],
-  collectCoverageFrom: ['src/**/*.js'],
+  extensionsToTreatAsEsm: ['.ts'],
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
+  transform: {
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: './tsconfig.test.json',
+      },
+    ],
+  },
+  moduleFileExtensions: ['ts', 'js'],
+  testMatch: ['**/tests/**/*.test.ts'],
+  collectCoverageFrom: ['src/**/*.ts'],
   coverageDirectory: 'coverage',
 };
