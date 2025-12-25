@@ -1,5 +1,10 @@
 FROM node:22-alpine AS client-builder
 
+WORKDIR /app
+
+# Copy root tsconfig.json (client extends it)
+COPY tsconfig.json ./tsconfig.json
+
 WORKDIR /app/client
 
 COPY client/package*.json ./
@@ -14,7 +19,12 @@ FROM node:22-alpine AS server-builder
 
 WORKDIR /app
 
-COPY server/package*.json ./
+# Copy root tsconfig.json (server extends it)
+COPY tsconfig.json ./tsconfig.json
+
+COPY server/package*.json ./server/
+
+WORKDIR /app/server
 
 RUN npm ci
 
@@ -35,7 +45,7 @@ COPY server/package*.json ./
 RUN npm ci --only=production
 
 # Copy compiled server from builder
-COPY --from=server-builder /app/dist ./dist
+COPY --from=server-builder /app/server/dist ./dist
 
 COPY --from=client-builder /app/client/dist ./client/dist
 

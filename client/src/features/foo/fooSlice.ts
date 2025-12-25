@@ -46,6 +46,7 @@ const fooSlice = createSlice({
 export const selectFoo = (state: RootState): string => state.foo.value;
 export const selectFooStatus = (state: RootState): FooState['status'] =>
   state.foo.status;
-export const selectFooError = (state: RootState): string | null => state.foo.error;
+export const selectFooError = (state: RootState): string | null =>
+  state.foo.error;
 
 export default fooSlice.reducer;

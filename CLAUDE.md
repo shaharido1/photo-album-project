@@ -24,7 +24,22 @@
 
 ### Pre-Commit Checklist
 
-For any new feature or bug fix, you MUST:
+For any new feature or bug fix, the easiest approach is to run the local CI pipeline:
+
+```bash
+npm run ci:local    # Runs ALL checks in Docker (recommended before pushing)
+```
+
+This runs the full CI pipeline locally in Docker, matching the GitHub Actions environment exactly:
+- TypeScript typecheck
+- ESLint
+- Prettier
+- Server unit tests
+- Client unit tests
+- E2E tests (Playwright)
+- Production Docker build validation
+
+Alternatively, you can run checks individually:
 
 1. **Run Linting**
 
@@ -36,7 +51,7 @@ For any new feature or bug fix, you MUST:
 
 2. **Write Unit Tests**
    - Server: Add tests in `server/tests/`
-   - Client: Add tests in component files (`*.test.jsx`)
+   - Client: Add tests in component files (`*.test.tsx`)
 
 3. **Run Unit Tests**
 
@@ -85,6 +100,9 @@ npx playwright test --ui    # Run with Playwright UI
 # All Tests
 npm test                    # Run all unit tests
 npm run test:e2e            # Run E2E tests
+
+# Local CI (run full pipeline before pushing)
+npm run ci:local            # Runs lint, typecheck, unit tests, E2E in Docker
 
 # Docker
 docker-compose up           # Run full stack locally

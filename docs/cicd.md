@@ -176,6 +176,41 @@ services:
 - `runtime: image` - Pulls pre-built image instead of building
 - `autoDeploy: false` - Deploys are triggered by GitHub Actions
 
+## Local CI Pipeline
+
+Before pushing to GitHub, you can run the entire CI pipeline locally using Docker:
+
+```bash
+npm run ci:local
+```
+
+This runs the full pipeline in Docker, matching the GitHub Actions environment:
+
+- TypeScript typecheck
+- ESLint
+- Prettier
+- Server unit tests
+- Client unit tests
+- E2E tests (Playwright)
+- Production Docker build validation
+
+**How it works:**
+
+The `Dockerfile.ci` file defines a multi-stage build that:
+
+1. **Stage 1** - Mirrors the production Dockerfile to verify it builds correctly
+2. **Stage 2** - Runs all tests in a Node.js environment with Playwright installed
+3. **Final stage** - Reports success/failure
+
+If all checks pass, you'll see:
+
+```
+✅ All CI checks passed!
+Safe to push to main branch.
+```
+
+If any check fails, the build stops and shows the error.
+
 ## Manual Operations
 
 ### Trigger Deploy via CLI

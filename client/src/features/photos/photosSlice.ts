@@ -84,7 +84,8 @@ export const {
 } = photosSlice.actions;
 
 // Selectors
-export const selectAllPhotos = (state: RootState): Photo[] => state.photos.items;
+export const selectAllPhotos = (state: RootState): Photo[] =>
+  state.photos.items;
 export const selectPhotosStatus = (state: RootState): PhotosState['status'] =>
   state.photos.status;
 export const selectPhotosError = (state: RootState): string | null =>

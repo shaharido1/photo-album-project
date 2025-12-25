@@ -46,9 +46,11 @@ const greetingSlice = createSlice({
   },
 });
 
-export const selectGreeting = (state: RootState): string => state.greeting.message;
-export const selectGreetingStatus = (state: RootState): GreetingState['status'] =>
-  state.greeting.status;
+export const selectGreeting = (state: RootState): string =>
+  state.greeting.message;
+export const selectGreetingStatus = (
+  state: RootState
+): GreetingState['status'] => state.greeting.status;
 export const selectGreetingError = (state: RootState): string | null =>
   state.greeting.error;
 

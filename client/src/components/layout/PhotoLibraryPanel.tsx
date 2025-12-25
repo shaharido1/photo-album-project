@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, useCallback, DragEvent, ChangeEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  DragEvent,
+  ChangeEvent,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -121,7 +128,11 @@ export function PhotoLibraryPanel(): JSX.Element {
         if (result.status === 'fulfilled') {
           successfulPhotos.push(result.value);
         } else {
-          errors.push(result.reason instanceof Error ? result.reason.message : 'Unknown error');
+          errors.push(
+            result.reason instanceof Error
+              ? result.reason.message
+              : 'Unknown error'
+          );
         }
       });
 
@@ -183,7 +194,10 @@ export function PhotoLibraryPanel(): JSX.Element {
     dispatch(togglePhotoSelection(photoId));
   };
 
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, photoId: string): void => {
+  const handleDragStart = (
+    e: DragEvent<HTMLDivElement>,
+    photoId: string
+  ): void => {
     e.dataTransfer.setData('photoId', photoId);
     e.dataTransfer.effectAllowed = 'copy';
   };

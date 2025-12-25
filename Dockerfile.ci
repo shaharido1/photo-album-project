@@ -1,0 +1,137 @@
+# Dockerfile.ci - Run full CI pipeline locally
+# Usage: docker build -f Dockerfile.ci .
+#
+# This first builds the production image to verify it works,
+# then runs all tests in a test stage.
+
+# ============================================
+# Stage 1: Build production image (validates Dockerfile works)
+# These stages mirror the production Dockerfile exactly
+# ============================================
+FROM node:22-alpine AS client-builder
+
+WORKDIR /app
+
+# Copy root tsconfig.json (client extends it)
+COPY tsconfig.json ./tsconfig.json
+
+WORKDIR /app/client
+
+COPY client/package*.json ./
+
+RUN npm ci
+
+COPY client/ .
+
+RUN npm run build
+
+FROM node:22-alpine AS server-builder
+
+WORKDIR /app
+
+# Copy root tsconfig.json (server extends it)
+COPY tsconfig.json ./tsconfig.json
+
+COPY server/package*.json ./server/
+
+WORKDIR /app/server
+
+RUN npm ci
+
+# Build server TypeScript
+COPY server/tsconfig.json ./tsconfig.json
+COPY server/src ./src
+RUN npx tsc
+
+FROM node:22-alpine AS production-test
+
+WORKDIR /app
+
+# Copy root package.json first to get version info
+COPY package.json ./root-package.json
+
+COPY server/package*.json ./
+
+RUN npm ci --only=production
+
+# Copy compiled server from builder
+COPY --from=server-builder /app/server/dist ./dist
+
+COPY --from=client-builder /app/client/dist ./client/dist
+
+# Verify production build works
+RUN echo "✅ Production Docker build successful!"
+
+# ============================================
+# Stage 2: Run all CI tests
+# ============================================
+FROM node:20-bookworm AS test-runner
+
+# Install Playwright system dependencies
+RUN apt-get update && apt-get install -y \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy everything
+COPY . .
+
+# Install all dependencies
+RUN npm install --ignore-scripts
+RUN cd server && npm ci
+RUN cd client && npm ci
+
+# Install Playwright browsers
+RUN npx playwright install chromium
+
+# Run all CI checks
+RUN echo "=== Step 1: TypeScript Typecheck ===" && npm run typecheck
+
+RUN echo "=== Step 2: ESLint ===" && npx eslint .
+
+RUN echo "=== Step 3: Prettier Check ===" && \
+    npx prettier --check "**/*.{js,jsx,ts,tsx,json}" --ignore-path .gitignore
+
+RUN echo "=== Step 4: Server Unit Tests ===" && cd server && npm test
+
+RUN echo "=== Step 5: Client Unit Tests ===" && cd client && npm test
+
+RUN echo "=== Step 6: E2E Tests ===" && npm run test:e2e
+
+# ============================================
+# Final stage: Success message
+# ============================================
+FROM alpine:latest
+
+# Copy success indicator from both stages
+COPY --from=production-test /app/root-package.json /tmp/prod-ok
+COPY --from=test-runner /app/package.json /tmp/test-ok
+
+RUN echo "============================================" && \
+    echo "✅ All CI checks passed!" && \
+    echo "============================================" && \
+    echo "  ✓ Production Docker build" && \
+    echo "  ✓ TypeScript typecheck" && \
+    echo "  ✓ ESLint" && \
+    echo "  ✓ Prettier" && \
+    echo "  ✓ Server unit tests" && \
+    echo "  ✓ Client unit tests" && \
+    echo "  ✓ E2E tests" && \
+    echo "============================================"
+
+CMD ["echo", "CI pipeline completed successfully!"]

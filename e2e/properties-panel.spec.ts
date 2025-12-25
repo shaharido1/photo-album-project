@@ -1,7 +1,10 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Helper function to create an album
-async function createAlbum(page: Page, name: string = 'Test Album'): Promise<void> {
+async function createAlbum(
+  page: Page,
+  name: string = 'Test Album'
+): Promise<void> {
   await page.getByRole('button', { name: 'New Album' }).click();
   await page.getByLabel('Album Name').fill(name);
   await page.getByLabel('Album Name').press('Enter');

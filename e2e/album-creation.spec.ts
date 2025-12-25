@@ -1,7 +1,10 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Helper function to create an album
-async function createAlbum(page: Page, name: string = 'Test Album'): Promise<void> {
+async function createAlbum(
+  page: Page,
+  name: string = 'Test Album'
+): Promise<void> {
   await page.getByRole('button', { name: 'New Album' }).click();
   await page.getByLabel('Album Name').fill(name);
   await page.getByLabel('Album Name').press('Enter');
@@ -38,13 +41,12 @@ test.describe('Album Creation', () => {
     await page.getByRole('button', { name: 'New Album' }).click();
 
     // Click on 12x12 size
-    await page.getByText('12×12"').click();
+    const option12x12 = page.getByTestId('album-size-12x12');
+    await option12x12.click();
 
-    // Verify it's selected (has border-primary class via visual inspection)
-    // The preview should update to show the selected size
-    await expect(
-      page.locator('.text-center .font-medium').filter({ hasText: '12×12"' })
-    ).toBeVisible();
+    // Verify it's selected (has checkmark icon and border-primary class)
+    await expect(option12x12.locator('svg')).toBeVisible();
+    await expect(option12x12).toHaveClass(/border-primary/);
   });
 
   test('should create a new album', async ({ page }) => {

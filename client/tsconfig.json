@@ -15,5 +15,12 @@
     "noEmit": true
   },
   "include": ["src/**/*", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.test.tsx", "src/__mocks__/**", "src/setupTests.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/__mocks__/**",
+    "src/setupTests.ts"
+  ]
 }

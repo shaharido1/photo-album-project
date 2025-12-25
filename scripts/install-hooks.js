@@ -39,7 +39,9 @@ function main() {
 
   // Check if hooks source directory exists
   if (!existsSync(hooksSourceDir)) {
-    console.log('No hooks directory found at scripts/hooks/ - skipping hook installation.');
+    console.log(
+      'No hooks directory found at scripts/hooks/ - skipping hook installation.'
+    );
     return;
   }
 

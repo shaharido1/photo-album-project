@@ -166,7 +166,10 @@ const albumSlice = createSlice({
       }
     },
 
-    updatePageLayout: (state, action: PayloadAction<UpdatePageLayoutPayload>) => {
+    updatePageLayout: (
+      state,
+      action: PayloadAction<UpdatePageLayoutPayload>
+    ) => {
       const { pageIndex, layoutId } = action.payload;
       if (state.album.pages[pageIndex]) {
         const page = state.album.pages[pageIndex];
@@ -182,14 +185,20 @@ const albumSlice = createSlice({
       }
     },
 
-    setPageBackground: (state, action: PayloadAction<SetPageBackgroundPayload>) => {
+    setPageBackground: (
+      state,
+      action: PayloadAction<SetPageBackgroundPayload>
+    ) => {
       const { pageIndex, color } = action.payload;
       if (state.album.pages[pageIndex]) {
         state.album.pages[pageIndex].background = color;
       }
     },
 
-    assignPhotoToSlot: (state, action: PayloadAction<AssignPhotoToSlotPayload>) => {
+    assignPhotoToSlot: (
+      state,
+      action: PayloadAction<AssignPhotoToSlotPayload>
+    ) => {
       const { pageIndex, slotIndex, photoId } = action.payload;
       const page = state.album.pages[pageIndex];
       if (page && page.slots[slotIndex]) {

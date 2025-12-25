@@ -70,7 +70,9 @@ function main() {
   const currentVersion = rootPackage.version;
   const newVersion = bumpVersion(currentVersion, bumpType);
 
-  console.log(`Bumping version: ${currentVersion} -> ${newVersion} (${bumpType})`);
+  console.log(
+    `Bumping version: ${currentVersion} -> ${newVersion} (${bumpType})`
+  );
 
   // Update all package.json files
   for (const filePath of packageFiles) {

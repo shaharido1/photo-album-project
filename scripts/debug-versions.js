@@ -256,7 +256,9 @@ function compareVersions(local, ghcr, deployed, workflow) {
 
   console.log('Component        | Version   | SHA     | Status');
   console.log('-'.repeat(65));
-  console.log(`Local HEAD       | ${localVersion.padEnd(9)} | ${localSha.padEnd(7)} |`);
+  console.log(
+    `Local HEAD       | ${localVersion.padEnd(9)} | ${localSha.padEnd(7)} |`
+  );
   console.log(
     `Latest CI Run    | ${''.padEnd(9)} | ${workflowSha.padEnd(7)} | ${workflow?.conclusion || 'N/A'}`
   );

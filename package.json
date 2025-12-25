@@ -30,7 +30,8 @@
     "debug:workflow": "node scripts/debug-github-workflow.js",
     "debug:render": "node scripts/debug-render.js",
     "debug:versions": "node scripts/debug-versions.js",
-    "debug:all": "node scripts/debug-versions.js && node scripts/debug-github-workflow.js && node scripts/debug-render.js"
+    "debug:all": "node scripts/debug-versions.js && node scripts/debug-github-workflow.js && node scripts/debug-render.js",
+    "ci:local": "bash scripts/ci-local.sh"
   },
   "keywords": [
     "hello-world",

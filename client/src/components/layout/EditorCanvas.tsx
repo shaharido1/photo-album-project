@@ -36,7 +36,9 @@ interface UseImageState {
 }
 
 // Custom hook to load images
-function useImage(url: string | undefined): [HTMLImageElement | null, ImageStatus] {
+function useImage(
+  url: string | undefined
+): [HTMLImageElement | null, ImageStatus] {
   const [state, setState] = useState<UseImageState>({
     image: null,
     status: url ? 'loading' : 'idle',
@@ -254,7 +256,10 @@ interface StageSize {
 export function EditorCanvas(): JSX.Element {
   const dispatch = useAppDispatch();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [stageSize, setStageSize] = useState<StageSize>({ width: 500, height: 500 });
+  const [stageSize, setStageSize] = useState<StageSize>({
+    width: 500,
+    height: 500,
+  });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const albumId = useAppSelector(selectAlbumId);
@@ -356,7 +361,10 @@ export function EditorCanvas(): JSX.Element {
           })
         );
         dispatch(
-          selectSlot({ pageIndex: currentPageIndex, slotIndex: targetSlotIndex })
+          selectSlot({
+            pageIndex: currentPageIndex,
+            slotIndex: targetSlotIndex,
+          })
         );
       }
     },
@@ -367,7 +375,9 @@ export function EditorCanvas(): JSX.Element {
     e.preventDefault();
   };
 
-  const handleStageClick = (e: KonvaEventObject<MouseEvent | TouchEvent>): void => {
+  const handleStageClick = (
+    e: KonvaEventObject<MouseEvent | TouchEvent>
+  ): void => {
     // Deselect when clicking on empty space
     if (e.target === e.target.getStage()) {
       dispatch(selectSlot(null));
