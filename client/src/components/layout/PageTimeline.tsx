@@ -175,23 +175,19 @@ export function PageTimeline(): JSX.Element {
 
   // Group pages into spreads for visual indication in book view
   const renderPages = (): JSX.Element[] => {
-    const elements: JSX.Element[] = [];
-    let i = 0;
-
-    while (i < pages.length) {
-      const page = pages[i];
-      const isInSpread = isPageInSpread(i, currentSpread);
+    return pages.map((page, pageIndex) => {
+      const isInSpread = isPageInSpread(pageIndex, currentSpread);
 
       // In book view, add spread grouping brackets
       if (viewMode === 'book') {
-        const spreadIndex = getSpreadIndexForPage(i);
+        const spreadIndex = getSpreadIndexForPage(pageIndex);
         const isFirstInSpread =
-          i === 0 || getSpreadIndexForPage(i - 1) !== spreadIndex;
+          pageIndex === 0 || getSpreadIndexForPage(pageIndex - 1) !== spreadIndex;
         const nextSpreadIndex =
-          i + 1 < pages.length ? getSpreadIndexForPage(i + 1) : -1;
+          pageIndex + 1 < pages.length ? getSpreadIndexForPage(pageIndex + 1) : -1;
         const isLastInSpread = nextSpreadIndex !== spreadIndex;
 
-        elements.push(
+        return (
           <div
             key={page.id}
             className={cn(
@@ -199,7 +195,7 @@ export function PageTimeline(): JSX.Element {
               isFirstInSpread && 'ml-1',
               isLastInSpread && 'mr-1'
             )}
-            onDoubleClick={() => handlePageDoubleClick(i)}
+            onDoubleClick={() => handlePageDoubleClick(pageIndex)}
           >
             {/* Spread bracket start */}
             {isFirstInSpread && (
@@ -212,12 +208,12 @@ export function PageTimeline(): JSX.Element {
             )}
             <PageThumbnail
               page={page}
-              pageIndex={i}
-              isCurrent={currentPageIndex === i}
+              pageIndex={pageIndex}
+              isCurrent={currentPageIndex === pageIndex}
               isInCurrentSpread={isInSpread}
               photos={photos}
-              onClick={() => handlePageClick(i)}
-              onRemove={() => handleRemovePage(i)}
+              onClick={() => handlePageClick(pageIndex)}
+              onRemove={() => handleRemovePage(pageIndex)}
               canRemove={pages.length > 1}
               viewMode={viewMode}
             />
@@ -233,25 +229,22 @@ export function PageTimeline(): JSX.Element {
           </div>
         );
       } else {
-        elements.push(
+        return (
           <PageThumbnail
             key={page.id}
             page={page}
-            pageIndex={i}
-            isCurrent={currentPageIndex === i}
+            pageIndex={pageIndex}
+            isCurrent={currentPageIndex === pageIndex}
             isInCurrentSpread={isInSpread}
             photos={photos}
-            onClick={() => handlePageClick(i)}
-            onRemove={() => handleRemovePage(i)}
+            onClick={() => handlePageClick(pageIndex)}
+            onRemove={() => handleRemovePage(pageIndex)}
             canRemove={pages.length > 1}
             viewMode={viewMode}
           />
         );
       }
-      i++;
-    }
-
-    return elements;
+    });
   };
 
   return (
