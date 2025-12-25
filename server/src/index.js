@@ -13,6 +13,11 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint for container orchestration (Render, K8s)
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.use('/api', apiRoutes);
 
 const clientBuildPath =

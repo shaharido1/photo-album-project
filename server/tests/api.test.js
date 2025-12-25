@@ -5,6 +5,18 @@ afterAll((done) => {
   server.close(done);
 });
 
+describe('Health Check', () => {
+  describe('GET /healthz', () => {
+    it('should return health status for container orchestration', async () => {
+      const response = await request(app).get('/healthz');
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('ok');
+      expect(response.body.timestamp).toBeDefined();
+    });
+  });
+});
+
 describe('API Routes', () => {
   describe('GET /api/hello', () => {
     it('should return Hello World message', async () => {
