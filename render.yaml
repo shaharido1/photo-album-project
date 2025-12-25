@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: hello-world-app
+    runtime: node
+    buildCommand: cd client && npm ci && npm run build && cd ../server && npm ci
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+    autoDeploy: true
