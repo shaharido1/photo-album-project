@@ -12,8 +12,9 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createAlbum } from '@/features/album/albumSlice';
-import { useAppDispatch } from '@/app/hooks';
+import { createAlbum, createAlbumAsync } from '@/features/album/albumSlice';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import type { AlbumSizeKey } from '@/types';
 
 interface AlbumSizeOption {
@@ -72,18 +73,36 @@ export function CreateAlbumDialog({
   onOpenChange,
 }: CreateAlbumDialogProps): JSX.Element {
   const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [albumName, setAlbumName] = React.useState('');
   const [selectedSize, setSelectedSize] = React.useState<AlbumSizeOption>(
     ALBUM_SIZES[1]
   );
+  const [isCreating, setIsCreating] = React.useState(false);
 
-  const handleCreate = (): void => {
-    if (!albumName.trim()) return;
+  const handleCreate = async (): Promise<void> => {
+    if (!albumName.trim() || isCreating) return;
 
-    dispatch(createAlbum({ name: albumName, size: selectedSize.id }));
-    setAlbumName('');
-    setSelectedSize(ALBUM_SIZES[1]);
-    onOpenChange(false);
+    setIsCreating(true);
+    try {
+      // Use async thunk to create album in Firebase if user is logged in
+      // Otherwise, create locally for demo/unauthenticated use
+      if (isAuthenticated) {
+        await dispatch(
+          createAlbumAsync({ name: albumName, size: selectedSize.id })
+        ).unwrap();
+      } else {
+        dispatch(createAlbum({ name: albumName, size: selectedSize.id }));
+      }
+      setAlbumName('');
+      setSelectedSize(ALBUM_SIZES[1]);
+      onOpenChange(false);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to create album:', error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleOpenChange = (newOpen: boolean): void => {
@@ -112,9 +131,11 @@ export function CreateAlbumDialog({
               placeholder="My Photo Album"
               value={albumName}
               onChange={(e) => setAlbumName(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && albumName.trim() && handleCreate()
-              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && albumName.trim() && !isCreating) {
+                  void handleCreate();
+                }
+              }}
             />
           </div>
 
@@ -159,11 +180,18 @@ export function CreateAlbumDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isCreating}
+          >
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={!albumName.trim()}>
-            Create Album
+          <Button
+            onClick={() => void handleCreate()}
+            disabled={!albumName.trim() || isCreating}
+          >
+            {isCreating ? 'Creating...' : 'Create Album'}
           </Button>
         </DialogFooter>
       </DialogContent>
