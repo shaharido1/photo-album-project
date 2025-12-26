@@ -5,7 +5,7 @@
  */
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -51,6 +51,9 @@ export const getFirebaseAuth = (): Auth | null => {
 
   if (!auth) {
     auth = getAuth(firebaseApp);
+    // Set persistence to local storage (IndexedDB) for session persistence across browser restarts
+    // eslint-disable-next-line no-console
+    setPersistence(auth, browserLocalPersistence).catch(console.error);
   }
 
   return auth;

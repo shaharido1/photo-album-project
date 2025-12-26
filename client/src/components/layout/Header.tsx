@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { Download, Save, Moon, Sun, Plus } from 'lucide-react';
+import { Download, Save, Moon, Sun, Plus, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { selectAlbumName, selectAlbumId } from '@/features/album/albumSlice';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
+import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { LoginButton } from '@/components/auth/LoginButton';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ViewModeToggle } from './ViewModeToggle';
@@ -21,6 +22,7 @@ const getInitialDarkMode = (): boolean => {
 export function Header(): JSX.Element {
   const [isDark, setIsDark] = useState(getInitialDarkMode);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
   const albumId = useAppSelector(selectAlbumId);
   const albumName = useAppSelector(selectAlbumName);
@@ -77,6 +79,18 @@ export function Header(): JSX.Element {
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
+        {isAuthenticated && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsFeedbackDialogOpen(true)}
+            aria-label="Send feedback"
+            title="Send feedback"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
+        )}
+
         {/* Auth: Show login button or user menu */}
         {isAuthenticated ? <UserMenu /> : <LoginButton />}
       </div>
@@ -84,6 +98,11 @@ export function Header(): JSX.Element {
       <CreateAlbumDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+      />
+
+      <FeedbackDialog
+        open={isFeedbackDialogOpen}
+        onOpenChange={setIsFeedbackDialogOpen}
       />
     </header>
   );
