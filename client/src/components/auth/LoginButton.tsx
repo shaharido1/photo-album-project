@@ -15,7 +15,9 @@ interface LoginButtonProps {
   className?: string;
 }
 
-export function LoginButton({ className }: LoginButtonProps): JSX.Element | null {
+export function LoginButton({
+  className,
+}: LoginButtonProps): JSX.Element | null {
   const [dialogOpen, setDialogOpen] = useState(false);
   const status = useAppSelector(selectAuthStatus);
 

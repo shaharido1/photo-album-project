@@ -7,7 +7,11 @@
 import { useEffect } from 'react';
 import { useAppDispatch } from '@/app/hooks';
 import { setUser, setToken } from '@/features/auth/authSlice';
-import { subscribeToAuthChanges, getIdToken, isAuthAvailable } from '@/services/authService';
+import {
+  subscribeToAuthChanges,
+  getIdToken,
+  isAuthAvailable,
+} from '@/services/authService';
 
 interface AuthProviderProps {
   children: React.ReactNode;

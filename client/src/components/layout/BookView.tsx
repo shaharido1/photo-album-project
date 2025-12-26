@@ -334,8 +334,12 @@ export function BookView(): JSX.Element {
             <span>Cover</span>
           ) : (
             <span>
-              Pages {spreadInfo.leftPageIndex !== null ? spreadInfo.leftPageIndex + 1 : '-'}
-              {spreadInfo.rightPageIndex !== null && ` - ${spreadInfo.rightPageIndex + 1}`}
+              Pages{' '}
+              {spreadInfo.leftPageIndex !== null
+                ? spreadInfo.leftPageIndex + 1
+                : '-'}
+              {spreadInfo.rightPageIndex !== null &&
+                ` - ${spreadInfo.rightPageIndex + 1}`}
             </span>
           )}
           <span className="mx-2">|</span>

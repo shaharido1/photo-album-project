@@ -27,7 +27,11 @@ export const userService = {
   /**
    * Get or create user profile on first login
    */
-  async getOrCreate(uid: string, email: string, displayName: string): Promise<void> {
+  async getOrCreate(
+    uid: string,
+    email: string,
+    displayName: string
+  ): Promise<void> {
     const userRef = db().collection('users').doc(uid);
     const doc = await userRef.get();
 
@@ -193,7 +197,10 @@ export const albumService = {
   /**
    * Get single album by ID with pages
    */
-  async getById(albumId: string, userId: string): Promise<FirestoreAlbumWithPages | null> {
+  async getById(
+    albumId: string,
+    userId: string
+  ): Promise<FirestoreAlbumWithPages | null> {
     const doc = await db().collection('albums').doc(albumId).get();
 
     if (!doc.exists) {
@@ -400,7 +407,11 @@ export const albumService = {
   /**
    * Delete a page from an album
    */
-  async deletePage(albumId: string, pageId: string, userId: string): Promise<boolean> {
+  async deletePage(
+    albumId: string,
+    pageId: string,
+    userId: string
+  ): Promise<boolean> {
     const albumDoc = await db().collection('albums').doc(albumId).get();
 
     if (!albumDoc.exists) {

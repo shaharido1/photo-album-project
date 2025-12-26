@@ -9,7 +9,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Authentication', () => {
   test.describe('Login Button', () => {
-    test('should show Sign In button when not authenticated', async ({ page }) => {
+    test('should show Sign In button when not authenticated', async ({
+      page,
+    }) => {
       await page.goto('/');
 
       // Wait for the page to load
@@ -29,7 +31,9 @@ test.describe('Authentication', () => {
 
       // Auth dialog should appear
       await expect(page.getByRole('dialog')).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Sign In' })
+      ).toBeVisible();
 
       // Should show Google sign-in option
       await expect(
@@ -43,7 +47,9 @@ test.describe('Authentication', () => {
   });
 
   test.describe('Auth Dialog Navigation', () => {
-    test('should switch between sign in and sign up modes', async ({ page }) => {
+    test('should switch between sign in and sign up modes', async ({
+      page,
+    }) => {
       await page.goto('/');
 
       // Open auth dialog
@@ -51,7 +57,9 @@ test.describe('Authentication', () => {
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Should be in sign in mode
-      await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Sign In' })
+      ).toBeVisible();
 
       // Switch to sign up
       await page.getByRole('button', { name: 'Create account' }).click();
@@ -68,7 +76,9 @@ test.describe('Authentication', () => {
       await page
         .getByRole('button', { name: 'Already have an account? Sign in' })
         .click();
-      await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Sign In' })
+      ).toBeVisible();
     });
 
     test('should switch to forgot password mode', async ({ page }) => {
@@ -96,7 +106,9 @@ test.describe('Authentication', () => {
 
       // Back to sign in
       await page.getByRole('button', { name: 'Back to sign in' }).click();
-      await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Sign In' })
+      ).toBeVisible();
     });
 
     test('should close dialog when clicking outside', async ({ page }) => {
@@ -204,7 +216,9 @@ test.describe('Authentication with Dev Mode', () => {
       if (!dialogStillOpen) {
         // Sign in was successful, dialog closed
         // User menu should now be visible
-        await expect(page.getByRole('button', { name: 'Sign In' })).not.toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Sign In' })
+        ).not.toBeVisible();
       }
       // If dialog is still open, sign in failed (expected when dev auth not enabled)
     });

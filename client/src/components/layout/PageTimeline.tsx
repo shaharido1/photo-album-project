@@ -182,9 +182,12 @@ export function PageTimeline(): JSX.Element {
       if (viewMode === 'book') {
         const spreadIndex = getSpreadIndexForPage(pageIndex);
         const isFirstInSpread =
-          pageIndex === 0 || getSpreadIndexForPage(pageIndex - 1) !== spreadIndex;
+          pageIndex === 0 ||
+          getSpreadIndexForPage(pageIndex - 1) !== spreadIndex;
         const nextSpreadIndex =
-          pageIndex + 1 < pages.length ? getSpreadIndexForPage(pageIndex + 1) : -1;
+          pageIndex + 1 < pages.length
+            ? getSpreadIndexForPage(pageIndex + 1)
+            : -1;
         const isLastInSpread = nextSpreadIndex !== spreadIndex;
 
         return (

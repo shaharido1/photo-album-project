@@ -15,7 +15,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { signOut, selectUser, selectAuthStatus } from '@/features/auth/authSlice';
+import {
+  signOut,
+  selectUser,
+  selectAuthStatus,
+} from '@/features/auth/authSlice';
 import { LogOut, User } from 'lucide-react';
 
 export function UserMenu(): JSX.Element | null {
@@ -38,7 +42,7 @@ export function UserMenu(): JSX.Element | null {
         .join('')
         .toUpperCase()
         .slice(0, 2)
-    : user.email?.charAt(0).toUpperCase() ?? 'U';
+    : (user.email?.charAt(0).toUpperCase() ?? 'U');
 
   const isLoading = status === 'loading';
 
@@ -48,7 +52,10 @@ export function UserMenu(): JSX.Element | null {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             {user.photoURL && (
-              <AvatarImage src={user.photoURL} alt={user.displayName ?? 'User'} />
+              <AvatarImage
+                src={user.photoURL}
+                alt={user.displayName ?? 'User'}
+              />
             )}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>

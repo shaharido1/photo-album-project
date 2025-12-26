@@ -269,8 +269,10 @@ const authSlice = createSlice({
 export const { setUser, setToken, clearError } = authSlice.actions;
 
 // Selectors
-export const selectUser = (state: RootState): AuthUser | null => state.auth.user;
-export const selectToken = (state: RootState): string | null => state.auth.token;
+export const selectUser = (state: RootState): AuthUser | null =>
+  state.auth.user;
+export const selectToken = (state: RootState): string | null =>
+  state.auth.token;
 export const selectAuthStatus = (state: RootState): AuthState['status'] =>
   state.auth.status;
 export const selectAuthError = (state: RootState): string | null =>

@@ -28,11 +28,7 @@ const createMockFirestore = (): any => {
     doc: jest.fn((id: string) => ({
       get: jest.fn(() =>
         Promise.resolve(
-          createMockSnapshot(
-            !!mockDocData[id],
-            id,
-            mockDocData[id] || null
-          )
+          createMockSnapshot(!!mockDocData[id], id, mockDocData[id] || null)
         )
       ),
       set: jest.fn((data: any) => {

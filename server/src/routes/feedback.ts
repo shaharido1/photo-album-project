@@ -27,7 +27,6 @@ router.post(
 
       const githubToken = process.env.GITHUB_TOKEN;
       if (!githubToken) {
-        console.error('GITHUB_TOKEN not configured');
         res.status(500).json({ error: 'Feedback service not configured' });
         return;
       }
@@ -70,8 +69,6 @@ ${description}
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('GitHub API error:', errorData);
         res.status(500).json({ error: 'Failed to create feedback issue' });
         return;
       }
@@ -88,8 +85,7 @@ ${description}
           url: issue.html_url,
         },
       });
-    } catch (error) {
-      console.error('Error creating feedback:', error);
+    } catch {
       res.status(500).json({ error: 'Failed to submit feedback' });
     }
   }

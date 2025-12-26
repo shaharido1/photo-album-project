@@ -56,7 +56,9 @@ export const isFirebaseInitialized = (): boolean => {
  */
 export const getFirestore = (): admin.firestore.Firestore => {
   if (!firebaseApp) {
-    throw new Error('Firebase not initialized. Call initializeFirebase() first.');
+    throw new Error(
+      'Firebase not initialized. Call initializeFirebase() first.'
+    );
   }
   return admin.firestore();
 };
@@ -66,7 +68,9 @@ export const getFirestore = (): admin.firestore.Firestore => {
  */
 export const getAuth = (): admin.auth.Auth => {
   if (!firebaseApp) {
-    throw new Error('Firebase not initialized. Call initializeFirebase() first.');
+    throw new Error(
+      'Firebase not initialized. Call initializeFirebase() first.'
+    );
   }
   return admin.auth();
 };

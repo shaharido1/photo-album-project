@@ -32,7 +32,10 @@ interface AuthDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function AuthDialog({ open, onOpenChange }: AuthDialogProps): JSX.Element {
+export function AuthDialog({
+  open,
+  onOpenChange,
+}: AuthDialogProps): JSX.Element {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectAuthStatus);
   const error = useAppSelector(selectAuthError);
@@ -118,7 +121,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps): JSX.Element
           <DialogDescription>
             {mode === 'signin' && 'Sign in to save and sync your albums'}
             {mode === 'signup' && 'Create a new account to get started'}
-            {mode === 'reset' && 'Enter your email to receive a password reset link'}
+            {mode === 'reset' &&
+              'Enter your email to receive a password reset link'}
           </DialogDescription>
         </DialogHeader>
 
@@ -219,15 +223,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps): JSX.Element
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                'Loading...'
-              ) : mode === 'signin' ? (
-                'Sign In'
-              ) : mode === 'signup' ? (
-                'Create Account'
-              ) : (
-                'Send Reset Link'
-              )}
+              {isLoading
+                ? 'Loading...'
+                : mode === 'signin'
+                  ? 'Sign In'
+                  : mode === 'signup'
+                    ? 'Create Account'
+                    : 'Send Reset Link'}
             </Button>
           </form>
 

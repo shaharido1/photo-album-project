@@ -5,7 +5,12 @@
  */
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import {
+  getAuth,
+  Auth,
+  browserLocalPersistence,
+  setPersistence,
+} from 'firebase/auth';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
