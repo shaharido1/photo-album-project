@@ -65,7 +65,7 @@ RUN echo "✅ Production Docker build successful!"
 # ============================================
 # Stage 2: Run all CI tests
 # ============================================
-FROM node:20-bookworm AS test-runner
+FROM node:22-bookworm AS test-runner
 
 # Install Playwright system dependencies
 RUN apt-get update && apt-get install -y \
