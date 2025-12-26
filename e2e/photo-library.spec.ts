@@ -1,8 +1,22 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
+
+// Helper function to create an album and switch to edit mode
+async function createAlbumAndEdit(
+  page: Page,
+  name: string = 'Test Album'
+): Promise<void> {
+  await page.getByRole('button', { name: 'New Album' }).click();
+  await page.getByLabel('Album Name').fill(name);
+  await page.getByLabel('Album Name').press('Enter');
+  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 5000 });
+  // Switch to Edit mode to see Photo Library
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+}
 
 test.describe('Photo Library', () => {
   test('should load photos in the library', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
 
     // Wait for photos to load
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
@@ -16,6 +30,7 @@ test.describe('Photo Library', () => {
 
   test('should select photo on click', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -29,6 +44,7 @@ test.describe('Photo Library', () => {
 
   test('should select multiple photos', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -43,6 +59,7 @@ test.describe('Photo Library', () => {
 
   test('should deselect photo on second click', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -57,6 +74,7 @@ test.describe('Photo Library', () => {
 
   test('should show upload and google buttons', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.getByRole('button', { name: 'Upload' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Google' })).toBeVisible();
   });
@@ -65,6 +83,7 @@ test.describe('Photo Library', () => {
     page,
   }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -81,6 +100,7 @@ test.describe('Photo Library', () => {
     page,
   }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -104,6 +124,7 @@ test.describe('Photo Library', () => {
     page,
   }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -124,6 +145,7 @@ test.describe('Photo Library', () => {
 
   test('should cancel delete when clicking cancel', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -146,6 +168,7 @@ test.describe('Photo Library', () => {
 
   test('should delete selected photos after confirmation', async ({ page }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });
@@ -177,6 +200,7 @@ test.describe('Photo Library', () => {
     page,
   }) => {
     await page.goto('/');
+    await createAlbumAndEdit(page);
     await expect(page.locator('img[loading="lazy"]').first()).toBeVisible({
       timeout: 10000,
     });

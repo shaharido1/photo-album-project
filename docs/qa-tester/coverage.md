@@ -121,7 +121,16 @@ describe('auth states', () => {
 
 ## Coverage Metrics
 
-While we don't enforce coverage percentages, aim for:
+Coverage thresholds are enforced and will fail the build if not met:
+
+### Current Thresholds
+
+| Package | Statements | Branches | Functions | Lines |
+|---------|------------|----------|-----------|-------|
+| **Server** | 35% | 15% | 40% | 35% |
+| **Client** | 2% | 0% | 3% | 2% |
+
+### Targets for New Code
 
 | Metric | Target |
 |--------|--------|
@@ -133,12 +142,30 @@ While we don't enforce coverage percentages, aim for:
 ## Running Coverage Reports
 
 ```bash
-# Server coverage
-cd server && npm test -- --coverage
+# Run coverage for both server and client
+npm run test:coverage
 
-# Client coverage
-cd client && npm test -- --coverage
+# Or run individually:
+npm run test:coverage:server
+npm run test:coverage:client
 ```
+
+### Coverage Report Locations
+
+After running coverage, HTML reports are generated:
+- **Server**: `server/coverage/lcov-report/index.html`
+- **Client**: `client/coverage/lcov-report/index.html`
+
+### Coverage Configuration
+
+Coverage is configured in Jest config files:
+- Server: [server/jest.config.js](../../server/jest.config.js)
+- Client: [client/jest.config.js](../../client/jest.config.js)
+
+Key settings:
+- `collectCoverageFrom`: Which files to include
+- `coverageThreshold`: Minimum percentages required
+- `coverageReporters`: Output formats (text, html, lcov)
 
 ## What NOT to Test
 

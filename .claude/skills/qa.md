@@ -4,7 +4,7 @@ You are now acting as the **QA Tester** role.
 
 ## Your Mission
 
-Ensure the feature has proper test coverage and all tests pass.
+Ensure the feature has proper test coverage, all tests pass, and coverage thresholds are met.
 
 ## Prerequisites
 
@@ -18,15 +18,41 @@ Before running this skill:
 
 ```bash
 # Server tests
-cd server && npm test
+npm run test:server
 
 # Client tests
-cd client && npm test
+npm run test:client
 ```
 
 Report any failures immediately.
 
-### Step 2: Check Test Coverage
+### Step 2: Run Coverage Reports
+
+```bash
+# Run coverage for both server and client
+npm run test:coverage
+
+# Or run individually:
+npm run test:coverage:server
+npm run test:coverage:client
+```
+
+#### Coverage Thresholds
+
+| Package | Statements | Branches | Functions | Lines |
+|---------|------------|----------|-----------|-------|
+| **Server** | 35% | 15% | 40% | 35% |
+| **Client** | 2% | 0% | 3% | 2% |
+
+If coverage drops below thresholds, the test command will fail.
+
+#### Coverage Reports
+
+After running coverage, HTML reports are generated:
+- Server: `server/coverage/lcov-report/index.html`
+- Client: `client/coverage/lcov-report/index.html`
+
+### Step 3: Verify New Code Has Tests
 
 For new code, verify:
 - New functions have unit tests
@@ -35,7 +61,7 @@ For new code, verify:
 
 If tests are missing, note them in the report.
 
-### Step 3: Run E2E Tests
+### Step 4: Run E2E Tests
 
 ```bash
 npm run test:e2e
@@ -43,7 +69,7 @@ npm run test:e2e
 
 Report any failures.
 
-### Step 4: Manual Verification with Playwright MCP
+### Step 5: Manual Verification with Playwright MCP
 
 **Only after automated tests pass**, use Playwright MCP for manual verification:
 
@@ -79,13 +105,19 @@ Report any failures.
 ```
 ## QA Report
 
-### Status: [PASS / NEEDS TESTS / TESTS FAILING]
+### Status: [PASS / NEEDS TESTS / TESTS FAILING / COVERAGE FAILED]
 
 ### Test Results:
 - Server Unit Tests: [PASS/FAIL] (X tests)
 - Client Unit Tests: [PASS/FAIL] (X tests)
 - E2E Tests: [PASS/FAIL] (X tests)
 - Manual Verification: [PASS/FAIL]
+
+### Coverage Status:
+| Package | Statements | Branches | Functions | Lines | Status |
+|---------|------------|----------|-----------|-------|--------|
+| Server  | X%         | X%       | X%        | X%    | [PASS/FAIL] |
+| Client  | X%         | X%       | X%        | X%    | [PASS/FAIL] |
 
 ### Missing Tests:
 1. [Function/Component] - needs [type] test
@@ -106,6 +138,7 @@ Report any failures.
 
 **PASS** if:
 - All existing tests pass
+- Coverage thresholds are met
 - New functionality has tests
 - No console errors
 - No failed network requests
@@ -116,6 +149,9 @@ Report any failures.
 
 **TESTS FAILING** if:
 - Any automated tests fail
+
+**COVERAGE FAILED** if:
+- Coverage drops below thresholds (indicates removed tests or new untested code)
 
 ## Next Step
 

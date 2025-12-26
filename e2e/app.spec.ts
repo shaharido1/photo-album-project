@@ -4,12 +4,13 @@ test.describe('Initial Load & Layout', () => {
   test('should load the editor layout', async ({ page }) => {
     await page.goto('/');
 
-    // Verify the main editor components are visible
+    // Verify the main header is visible
     await expect(
       page.getByRole('heading', { name: 'Photo Album' })
     ).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Photo Library')).toBeVisible();
-    await expect(page.getByText('Properties')).toBeVisible();
+    // Before album creation, app shows book view (empty state)
+    // Photo Library and Properties panels only show in edit mode after album creation
+    await expect(page.getByText('Create an album to start')).toBeVisible();
   });
 
   test('should show empty state before creating album', async ({ page }) => {

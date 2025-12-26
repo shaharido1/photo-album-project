@@ -15,6 +15,21 @@ export default {
     '^.+\\.(ts|tsx)$': 'babel-jest',
   },
   testMatch: ['**/*.test.{ts,tsx}'],
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/main.tsx'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/main.tsx',
+    '!src/**/*.d.ts',
+    '!src/__mocks__/**',
+    '!src/setupTests.ts',
+  ],
   coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'text-summary', 'lcov', 'html'],
+  coverageThreshold: {
+    global: {
+      branches: 0,
+      functions: 3,
+      lines: 2,
+      statements: 2,
+    },
+  },
 };

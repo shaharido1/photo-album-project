@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 
-// Helper function to create an album
+// Helper function to create an album and switch to edit mode
 async function createAlbum(
   page: Page,
   name: string = 'Test Album'
@@ -9,6 +9,8 @@ async function createAlbum(
   await page.getByLabel('Album Name').fill(name);
   await page.getByLabel('Album Name').press('Enter');
   await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 5000 });
+  // Switch to Edit mode to see Photo Library and canvas
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
 }
 
 test.describe('Photo Canvas & Layout', () => {

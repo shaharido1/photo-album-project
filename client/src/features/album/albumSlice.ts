@@ -1,4 +1,4 @@
-import { createSlice, createSelector, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createSelector, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 import type {
   Album,
@@ -20,6 +20,7 @@ import type {
   ViewMode,
   SpreadInfo,
 } from '@/types';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
 
 // Simple UUID generator
 const generateId = (): string => {
@@ -121,6 +122,178 @@ const initialState: AlbumState = {
   error: null,
 };
 
+// ============================================
+// Async Thunks for Firebase Operations
+// ============================================
+
+interface AlbumSummary {
+  id: string;
+  name: string;
+  size: AlbumSizeKey;
+  currentPageIndex: number;
+}
+
+/**
+ * Fetch all albums for the current user (summary list)
+ */
+export const fetchAlbums = createAsyncThunk<
+  AlbumSummary[],
+  void,
+  { rejectValue: string }
+>('album/fetchAlbums', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get<{ albums: AlbumSummary[] }>(
+      API_ENDPOINTS.ALBUMS,
+      { authenticated: true }
+    );
+    return response.albums;
+  } catch (error) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to fetch albums'
+    );
+  }
+});
+
+/**
+ * Fetch a single album by ID (with pages)
+ */
+export const fetchAlbum = createAsyncThunk<Album, string, { rejectValue: string }>(
+  'album/fetchAlbum',
+  async (albumId, { rejectWithValue }) => {
+    try {
+      const response = await api.get<{ album: Album }>(
+        `${API_ENDPOINTS.ALBUMS}/${albumId}`,
+        { authenticated: true }
+      );
+      return response.album;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to fetch album'
+      );
+    }
+  }
+);
+
+/**
+ * Create a new album in Firebase
+ */
+export const createAlbumAsync = createAsyncThunk<
+  Album,
+  CreateAlbumPayload,
+  { rejectValue: string }
+>('album/createAlbumAsync', async (payload, { rejectWithValue }) => {
+  try {
+    const response = await api.post<{ album: Album }>(
+      API_ENDPOINTS.ALBUMS,
+      { name: payload.name || 'Untitled Album', size: payload.size || '10x10' },
+      { authenticated: true }
+    );
+    return response.album;
+  } catch (error) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to create album'
+    );
+  }
+});
+
+/**
+ * Save/update an album to Firebase
+ */
+export const saveAlbum = createAsyncThunk<
+  void,
+  void,
+  { state: { album: AlbumState }; rejectValue: string }
+>('album/saveAlbum', async (_, { getState, rejectWithValue }) => {
+  try {
+    const { album } = getState().album;
+    if (!album.id) {
+      return rejectWithValue('Cannot save album without ID');
+    }
+
+    // Update album metadata
+    await api.put(
+      `${API_ENDPOINTS.ALBUMS}/${album.id}`,
+      {
+        name: album.name,
+        size: album.size,
+        currentPageIndex: album.currentPageIndex,
+      },
+      { authenticated: true }
+    );
+
+    // Save each page
+    for (let i = 0; i < album.pages.length; i++) {
+      const page = album.pages[i];
+      await api.put(
+        `${API_ENDPOINTS.ALBUMS}/${album.id}/pages/${page.id}`,
+        {
+          layoutId: page.layoutId,
+          background: page.background,
+          order: i,
+          slots: page.slots,
+        },
+        { authenticated: true }
+      );
+    }
+  } catch (error) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to save album'
+    );
+  }
+});
+
+/**
+ * Delete an album from Firebase
+ */
+export const deleteAlbum = createAsyncThunk<void, string, { rejectValue: string }>(
+  'album/deleteAlbum',
+  async (albumId, { rejectWithValue }) => {
+    try {
+      await api.delete(`${API_ENDPOINTS.ALBUMS}/${albumId}`, {
+        authenticated: true,
+      });
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to delete album'
+      );
+    }
+  }
+);
+
+/**
+ * Add a page to an album in Firebase
+ */
+export const addPageAsync = createAsyncThunk<
+  AlbumPage,
+  { albumId: string; layoutId?: string },
+  { state: { album: AlbumState }; rejectValue: string }
+>(
+  'album/addPageAsync',
+  async ({ albumId, layoutId = 'single' }, { getState, rejectWithValue }) => {
+    try {
+      const { album } = getState().album;
+      const order = album.pages.length;
+      const slots = createSlots(layoutId);
+
+      const response = await api.post<{ page: AlbumPage }>(
+        `${API_ENDPOINTS.ALBUMS}/${albumId}/pages`,
+        {
+          layoutId,
+          background: '#ffffff',
+          order,
+          slots,
+        },
+        { authenticated: true }
+      );
+      return response.page;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to add page'
+      );
+    }
+  }
+);
+
 const albumSlice = createSlice({
   name: 'album',
   initialState,
@@ -170,10 +343,7 @@ const albumSlice = createSlice({
       }
     },
 
-    updatePageLayout: (
-      state,
-      action: PayloadAction<UpdatePageLayoutPayload>
-    ) => {
+    updatePageLayout: (state, action: PayloadAction<UpdatePageLayoutPayload>) => {
       const { pageIndex, layoutId } = action.payload;
       if (state.album.pages[pageIndex]) {
         const page = state.album.pages[pageIndex];
@@ -189,20 +359,14 @@ const albumSlice = createSlice({
       }
     },
 
-    setPageBackground: (
-      state,
-      action: PayloadAction<SetPageBackgroundPayload>
-    ) => {
+    setPageBackground: (state, action: PayloadAction<SetPageBackgroundPayload>) => {
       const { pageIndex, color } = action.payload;
       if (state.album.pages[pageIndex]) {
         state.album.pages[pageIndex].background = color;
       }
     },
 
-    assignPhotoToSlot: (
-      state,
-      action: PayloadAction<AssignPhotoToSlotPayload>
-    ) => {
+    assignPhotoToSlot: (state, action: PayloadAction<AssignPhotoToSlotPayload>) => {
       const { pageIndex, slotIndex, photoId } = action.payload;
       const page = state.album.pages[pageIndex];
       if (page && page.slots[slotIndex]) {
@@ -210,10 +374,7 @@ const albumSlice = createSlice({
       }
     },
 
-    removePhotoFromSlot: (
-      state,
-      action: PayloadAction<RemovePhotoFromSlotPayload>
-    ) => {
+    removePhotoFromSlot: (state, action: PayloadAction<RemovePhotoFromSlotPayload>) => {
       const { pageIndex, slotIndex } = action.payload;
       const page = state.album.pages[pageIndex];
       if (page && page.slots[slotIndex]) {
@@ -224,10 +385,7 @@ const albumSlice = createSlice({
       }
     },
 
-    updateSlotPosition: (
-      state,
-      action: PayloadAction<UpdateSlotPositionPayload>
-    ) => {
+    updateSlotPosition: (state, action: PayloadAction<UpdateSlotPositionPayload>) => {
       const { pageIndex, slotIndex, position } = action.payload;
       const page = state.album.pages[pageIndex];
       if (page && page.slots[slotIndex]) {
@@ -243,10 +401,7 @@ const albumSlice = createSlice({
       }
     },
 
-    updateSlotRotation: (
-      state,
-      action: PayloadAction<UpdateSlotRotationPayload>
-    ) => {
+    updateSlotRotation: (state, action: PayloadAction<UpdateSlotRotationPayload>) => {
       const { pageIndex, slotIndex, rotation } = action.payload;
       const page = state.album.pages[pageIndex];
       if (page && page.slots[slotIndex]) {
@@ -315,6 +470,104 @@ const albumSlice = createSlice({
         state.album.currentPageIndex = pageIndex;
       }
     },
+
+    // Load album from API response
+    loadAlbum: (state, action: PayloadAction<Album>) => {
+      state.album = action.payload;
+      state.selectedSlot = null;
+      state.viewMode = 'book';
+      state.currentSpread = 0;
+      state.status = 'succeeded';
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    // fetchAlbum
+    builder
+      .addCase(fetchAlbum.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchAlbum.fulfilled, (state, action) => {
+        state.album = action.payload;
+        state.selectedSlot = null;
+        state.viewMode = 'book';
+        state.currentSpread = 0;
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(fetchAlbum.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload ?? 'Failed to fetch album';
+      });
+
+    // createAlbumAsync
+    builder
+      .addCase(createAlbumAsync.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createAlbumAsync.fulfilled, (state, action) => {
+        state.album = {
+          ...action.payload,
+          pages:
+            action.payload.pages.length > 0
+              ? action.payload.pages
+              : [createPage('single')],
+        };
+        state.selectedSlot = null;
+        state.viewMode = 'book';
+        state.currentSpread = 0;
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(createAlbumAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload ?? 'Failed to create album';
+      });
+
+    // saveAlbum
+    builder
+      .addCase(saveAlbum.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(saveAlbum.fulfilled, (state) => {
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(saveAlbum.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload ?? 'Failed to save album';
+      });
+
+    // deleteAlbum
+    builder
+      .addCase(deleteAlbum.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(deleteAlbum.fulfilled, (state) => {
+        state.album = initialState.album;
+        state.selectedSlot = null;
+        state.viewMode = 'book';
+        state.currentSpread = 0;
+        state.status = 'idle';
+        state.error = null;
+      })
+      .addCase(deleteAlbum.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload ?? 'Failed to delete album';
+      });
+
+    // addPageAsync
+    builder
+      .addCase(addPageAsync.fulfilled, (state, action) => {
+        state.album.pages.push(action.payload);
+      })
+      .addCase(addPageAsync.rejected, (state, action) => {
+        state.error = action.payload ?? 'Failed to add page';
+      });
   },
 });
 
@@ -339,18 +592,15 @@ export const {
   nextSpread,
   prevSpread,
   editPage,
+  loadAlbum,
 } = albumSlice.actions;
 
 // Selectors
 export const selectAlbum = (state: RootState): Album => state.album.album;
-export const selectAlbumId = (state: RootState): string | null =>
-  state.album.album.id;
-export const selectAlbumName = (state: RootState): string =>
-  state.album.album.name;
-export const selectAlbumSize = (state: RootState): AlbumSizeKey =>
-  state.album.album.size;
-export const selectPages = (state: RootState): AlbumPage[] =>
-  state.album.album.pages;
+export const selectAlbumId = (state: RootState): string | null => state.album.album.id;
+export const selectAlbumName = (state: RootState): string => state.album.album.name;
+export const selectAlbumSize = (state: RootState): AlbumSizeKey => state.album.album.size;
+export const selectPages = (state: RootState): AlbumPage[] => state.album.album.pages;
 export const selectCurrentPageIndex = (state: RootState): number =>
   state.album.album.currentPageIndex;
 export const selectCurrentPage = (state: RootState): AlbumPage | undefined =>
@@ -359,12 +609,11 @@ export const selectSelectedSlot = (state: RootState): SelectedSlotRef | null =>
   state.album.selectedSlot;
 export const selectAlbumStatus = (state: RootState): AlbumState['status'] =>
   state.album.status;
+export const selectAlbumError = (state: RootState): string | null => state.album.error;
 
 // View mode selectors
-export const selectViewMode = (state: RootState): ViewMode =>
-  state.album.viewMode;
-export const selectCurrentSpread = (state: RootState): number =>
-  state.album.currentSpread;
+export const selectViewMode = (state: RootState): ViewMode => state.album.viewMode;
+export const selectCurrentSpread = (state: RootState): number => state.album.currentSpread;
 
 // Get the pages for the current spread (memoized)
 export const selectSpreadInfo = createSelector(
