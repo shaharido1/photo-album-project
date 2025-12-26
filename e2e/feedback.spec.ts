@@ -278,33 +278,29 @@ test.describe('Feedback Feature', () => {
 
   test.describe('Feedback API', () => {
     test('should return 401 without authentication', async ({ request }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          data: {
-            title: 'Test feedback',
-            description: 'Test description',
-            feedbackType: 'general',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        data: {
+          title: 'Test feedback',
+          description: 'Test description',
+          feedbackType: 'general',
+        },
+      });
 
       expect(response.status()).toBe(401);
     });
 
     test('should return 400 when title is missing', async ({ request }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          headers: {
-            'X-Test-User-Id': 'e2e-test-user-123',
-          },
-          data: {
-            description: 'Test description',
-            feedbackType: 'general',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        headers: {
+          'X-Test-User-Id': 'e2e-test-user-123',
+        },
+        data: {
+          description: 'Test description',
+          feedbackType: 'general',
+        },
+      });
 
       expect(response.status()).toBe(400);
       const body = await response.json();
@@ -314,18 +310,16 @@ test.describe('Feedback Feature', () => {
     test('should return 400 when description is missing', async ({
       request,
     }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          headers: {
-            'X-Test-User-Id': 'e2e-test-user-123',
-          },
-          data: {
-            title: 'Test feedback',
-            feedbackType: 'general',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        headers: {
+          'X-Test-User-Id': 'e2e-test-user-123',
+        },
+        data: {
+          title: 'Test feedback',
+          feedbackType: 'general',
+        },
+      });
 
       expect(response.status()).toBe(400);
       const body = await response.json();
@@ -335,19 +329,17 @@ test.describe('Feedback Feature', () => {
     test('should accept valid feedback with test user header', async ({
       request,
     }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          headers: {
-            'X-Test-User-Id': 'e2e-test-user-123',
-          },
-          data: {
-            title: 'E2E Test Feedback',
-            description: 'This is an automated test feedback submission.',
-            feedbackType: 'general',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        headers: {
+          'X-Test-User-Id': 'e2e-test-user-123',
+        },
+        data: {
+          title: 'E2E Test Feedback',
+          description: 'This is an automated test feedback submission.',
+          feedbackType: 'general',
+        },
+      });
 
       // Should either succeed (201) or fail gracefully (500 if GitHub token not configured)
       // But should NOT be 400 (bad request) or 401 (unauthorized)
@@ -368,19 +360,17 @@ test.describe('Feedback Feature', () => {
     });
 
     test('should accept feedback with bug type', async ({ request }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          headers: {
-            'X-Test-User-Id': 'e2e-test-user-123',
-          },
-          data: {
-            title: 'E2E Test Bug Report',
-            description: 'Testing bug report feedback type.',
-            feedbackType: 'bug',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        headers: {
+          'X-Test-User-Id': 'e2e-test-user-123',
+        },
+        data: {
+          title: 'E2E Test Bug Report',
+          description: 'Testing bug report feedback type.',
+          feedbackType: 'bug',
+        },
+      });
 
       // Should not be 400 or 401
       expect(response.status()).not.toBe(400);
@@ -388,19 +378,17 @@ test.describe('Feedback Feature', () => {
     });
 
     test('should accept feedback with feature type', async ({ request }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          headers: {
-            'X-Test-User-Id': 'e2e-test-user-123',
-          },
-          data: {
-            title: 'E2E Test Feature Request',
-            description: 'Testing feature request feedback type.',
-            feedbackType: 'feature',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        headers: {
+          'X-Test-User-Id': 'e2e-test-user-123',
+        },
+        data: {
+          title: 'E2E Test Feature Request',
+          description: 'Testing feature request feedback type.',
+          feedbackType: 'feature',
+        },
+      });
 
       // Should not be 400 or 401
       expect(response.status()).not.toBe(400);
@@ -410,18 +398,16 @@ test.describe('Feedback Feature', () => {
     test('should default to general type when feedbackType is not provided', async ({
       request,
     }) => {
-      const response = await request.post(
-        'http://localhost:3001/api/feedback',
-        {
-          headers: {
-            'X-Test-User-Id': 'e2e-test-user-123',
-          },
-          data: {
-            title: 'E2E Test Default Type',
-            description: 'Testing default feedback type.',
-          },
-        }
-      );
+      // Use relative path - goes through Vite proxy to backend
+      const response = await request.post('/api/feedback', {
+        headers: {
+          'X-Test-User-Id': 'e2e-test-user-123',
+        },
+        data: {
+          title: 'E2E Test Default Type',
+          description: 'Testing default feedback type.',
+        },
+      });
 
       // Should not be 400 or 401
       expect(response.status()).not.toBe(400);

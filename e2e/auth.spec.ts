@@ -233,7 +233,8 @@ test.describe('Server Auth Bypass (E2E Test Mode)', () => {
     request,
   }) => {
     // Make a request to a protected endpoint with test user header
-    const response = await request.get('http://localhost:3001/api/albums', {
+    // Use relative path - goes through Vite proxy to backend
+    const response = await request.get('/api/albums', {
       headers: {
         'X-Test-User-Id': 'e2e-test-user-123',
       },
@@ -248,7 +249,8 @@ test.describe('Server Auth Bypass (E2E Test Mode)', () => {
     request,
   }) => {
     // Make a request without any auth
-    const response = await request.get('http://localhost:3001/api/albums');
+    // Use relative path - goes through Vite proxy to backend
+    const response = await request.get('/api/albums');
 
     // Should return 401 unauthorized
     expect(response.status()).toBe(401);

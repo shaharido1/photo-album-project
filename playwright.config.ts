@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Test server ports (different from dev server to avoid conflicts)
+const TEST_CLIENT_PORT = 4000;
+const TEST_SERVER_PORT = 4001;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -8,7 +12,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${TEST_CLIENT_PORT}`,
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,8 +22,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: `VITE_PORT=${TEST_CLIENT_PORT} VITE_API_PORT=${TEST_SERVER_PORT} PORT=${TEST_SERVER_PORT} npm run dev`,
+    url: `http://localhost:${TEST_CLIENT_PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
   },

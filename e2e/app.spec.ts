@@ -31,7 +31,8 @@ test.describe('Initial Load & Layout', () => {
 
 test.describe('API Endpoints', () => {
   test('should have API health endpoint working', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/health');
+    // Use relative path - goes through Vite proxy to backend
+    const response = await request.get('/api/health');
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
@@ -40,7 +41,8 @@ test.describe('API Endpoints', () => {
   });
 
   test('should have API photos endpoint working', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/api/photos');
+    // Use relative path - goes through Vite proxy to backend
+    const response = await request.get('/api/photos');
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
