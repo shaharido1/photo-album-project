@@ -40,42 +40,12 @@ All UI components must:
 
 ### 1. Photo Management
 
-- [ ] Upload photos from device (drag-and-drop + file picker)
+- [ ] Upload photos from device (drag-and-drop + file picker) -> I think it's implemented, maybe it's broken?
 - [ ] Import from Google Photos (OAuth)
-- [x] Photo library grid view with thumbnails
-- [x] Select multiple photos for album
-- [x] Delete/remove photos from library
 
-### 2. Album Setup
-
-- [x] Create new album (name, size selection)
-- [x] Album size presets:
-  - 8x8" (20x20 cm)
-  - 10x10" (25x25 cm)
-  - 12x12" (30x30 cm)
-  - A4 landscape
-  - A4 portrait
-- [x] Set page count (or auto-expand)
-
-### 3. Page Layouts & Templates
-
-- [x] Layout template library:
-  - Single photo (full page)
-  - Single photo (with margins)
-  - 2 photos (horizontal split)
-  - 2 photos (vertical split)
-  - 3 photos (various arrangements)
-  - 4 photos (grid)
-  - 6 photos (grid)
-  - [ ] Collage (freeform) - **Not implemented**
-- [x] Apply template to page
-- [x] Drag-and-drop photos into template slots
 
 ### 4. Photo Placement
 
-- [x] Drag photo within frame to reposition
-- [x] Zoom/scale photo within frame
-- [x] Rotate photo (90° increments)
 - [ ] Swap photos between slots
 
 ### 5. Auto-Arrange
