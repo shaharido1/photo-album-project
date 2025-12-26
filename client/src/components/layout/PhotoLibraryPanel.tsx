@@ -379,7 +379,7 @@ export function PhotoLibraryPanel(): JSX.Element {
                 Try again
               </Button>
             </div>
-          ) : photos.length === 0 ? (
+          ) : !photos || photos.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
                 <ImagePlus className="h-6 w-6 text-muted-foreground" />
