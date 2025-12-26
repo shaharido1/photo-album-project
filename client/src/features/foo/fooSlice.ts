@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
 
 interface FooState {
   value: string;
@@ -14,11 +15,7 @@ const initialState: FooState = {
 };
 
 export const fetchFoo = createAsyncThunk<string>('foo/fetchFoo', async () => {
-  const response = await fetch('/api/foo');
-  if (!response.ok) {
-    throw new Error('Failed to fetch foo');
-  }
-  const data = (await response.json()) as { value: string };
+  const data = await api.get<{ value: string }>(API_ENDPOINTS.FOO);
   return data.value;
 });
 

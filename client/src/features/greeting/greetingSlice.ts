@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
 
 interface GreetingState {
   message: string;
@@ -16,11 +17,7 @@ const initialState: GreetingState = {
 export const fetchGreeting = createAsyncThunk<string>(
   'greeting/fetchGreeting',
   async () => {
-    const response = await fetch('/api/hello');
-    if (!response.ok) {
-      throw new Error('Failed to fetch greeting');
-    }
-    const data = (await response.json()) as { message: string };
+    const data = await api.get<{ message: string }>(API_ENDPOINTS.HELLO);
     return data.message;
   }
 );

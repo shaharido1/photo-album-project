@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
 
 interface VersionState {
   value: string;
@@ -16,11 +17,7 @@ const initialState: VersionState = {
 export const fetchVersion = createAsyncThunk<string>(
   'version/fetchVersion',
   async () => {
-    const response = await fetch('/api/version');
-    if (!response.ok) {
-      throw new Error('Failed to fetch version');
-    }
-    const data = (await response.json()) as { version: string };
+    const data = await api.get<{ version: string }>(API_ENDPOINTS.VERSION);
     return data.version;
   }
 );

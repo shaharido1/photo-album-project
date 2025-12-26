@@ -32,7 +32,10 @@ photo-album-project/
 │   │   ├── features/           # Feature-based modules
 │   │   │   ├── auth/           # Auth slice and logic
 │   │   │   └── albums/         # Album management
-│   │   ├── services/           # API service functions
+│   │   ├── services/           # API & auth services
+│   │   │   ├── apiClient.ts    # Centralized API client
+│   │   │   ├── authService.ts  # Firebase authentication
+│   │   │   └── devAuthService.ts # Dev mode auth bypass
 │   │   ├── config/             # Configuration (Firebase, etc.)
 │   │   ├── App.tsx             # App root component
 │   │   └── main.tsx            # React entry point
@@ -141,6 +144,50 @@ photo-album-project/
   }
 }
 ```
+
+## Client API Layer
+
+All API calls go through a centralized API client (`client/src/services/apiClient.ts`).
+
+### API Endpoints Constant
+
+```typescript
+import { API_ENDPOINTS } from '@/services/apiClient';
+
+API_ENDPOINTS.HELLO     // '/api/hello'
+API_ENDPOINTS.VERSION   // '/api/version'
+API_ENDPOINTS.FOO       // '/api/foo'
+API_ENDPOINTS.PHOTOS    // '/api/photos'
+API_ENDPOINTS.FEEDBACK  // '/api/feedback'
+```
+
+### Usage Examples
+
+```typescript
+import { api, API_ENDPOINTS } from '@/services/apiClient';
+
+// Simple GET request
+const data = await api.get<{ message: string }>(API_ENDPOINTS.HELLO);
+
+// Authenticated GET request
+const photos = await api.get<{ photos: Photo[] }>(API_ENDPOINTS.PHOTOS, {
+  authenticated: true,
+});
+
+// Authenticated POST request
+const result = await api.post<{ issue: Issue }>(
+  API_ENDPOINTS.FEEDBACK,
+  { title: 'Bug', description: 'Details' },
+  { authenticated: true }
+);
+```
+
+### Benefits
+
+- **Single source of truth** for all endpoint URLs
+- **Type-safe** responses with generics
+- **Built-in authentication** via `authenticated: true` option
+- **Consistent error handling** across all API calls
 
 ## Environment Variables
 

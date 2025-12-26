@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 import type { Photo, PhotosState } from '@/types';
-import { getIdToken } from '@/services/authService';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
 
 const initialState: PhotosState = {
   items: [],
@@ -10,24 +10,13 @@ const initialState: PhotosState = {
   error: null,
 };
 
-/**
- * Get auth headers if user is logged in
- */
-const getAuthHeaders = async (): Promise<HeadersInit> => {
-  const token = await getIdToken();
-  if (token) {
-    return { Authorization: `Bearer ${token}` };
-  }
-  return {};
-};
-
 // Async thunk to fetch photos from API
 export const fetchPhotos = createAsyncThunk<Photo[]>(
   'photos/fetchPhotos',
   async () => {
-    const headers = await getAuthHeaders();
-    const response = await fetch('/api/photos', { headers });
-    const data = (await response.json()) as { photos: Photo[] };
+    const data = await api.get<{ photos: Photo[] }>(API_ENDPOINTS.PHOTOS, {
+      authenticated: true,
+    });
     return data.photos;
   }
 );

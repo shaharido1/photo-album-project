@@ -13,6 +13,7 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
 import { getIdToken } from '@/services/authService';
 
 interface FeedbackType {
@@ -81,25 +82,16 @@ export function FeedbackDialog({
         return;
       }
 
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      const data = await api.post<{ issue: { number: number; url: string } }>(
+        API_ENDPOINTS.FEEDBACK,
+        {
           title: title.trim(),
           description: description.trim(),
           feedbackType: feedbackType.id,
-        }),
-      });
+        },
+        { authenticated: true }
+      );
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit feedback');
-      }
-
-      const data = await response.json();
       setSuccess(data.issue);
     } catch (err) {
       setError(
