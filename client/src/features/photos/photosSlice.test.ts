@@ -8,8 +8,33 @@ import photosReducer, {
   togglePhotoSelection,
   clearSelection,
   selectAll,
+  setUploadProgress,
+  resetUploadState,
+  fetchPhotos,
+  uploadPhotos,
+  deletePhotoFromServer,
+  selectAllPhotos,
+  selectPhotosStatus,
+  selectPhotosError,
+  selectSelectedPhotoIds,
+  selectSelectedPhotos,
+  selectUploadStatus,
+  selectUploadProgress,
+  selectUploadError,
 } from './photosSlice';
-import type { PhotosState, Photo } from '@/types';
+import type { PhotosState, Photo, UploadProgress } from '@/types';
+
+// Mock the apiClient
+jest.mock('@/services/apiClient', () => ({
+  api: {
+    get: jest.fn(),
+    delete: jest.fn(),
+  },
+  uploadFiles: jest.fn(),
+  API_ENDPOINTS: {
+    PHOTOS: '/api/photos',
+  },
+}));
 
 describe('photosSlice', () => {
   const initialState: PhotosState = {
@@ -17,6 +42,9 @@ describe('photosSlice', () => {
     selectedIds: [],
     status: 'idle',
     error: null,
+    uploadStatus: 'idle',
+    uploadProgress: null,
+    uploadError: null,
   };
 
   const mockPhoto: Photo = {

@@ -6,11 +6,22 @@
  * Supertest works directly with the Express app.
  */
 
+import { jest, beforeAll, afterAll } from '@jest/globals';
 import { app } from '../src/app.js';
 
 // Test user ID headers for E2E test bypass (non-production only)
 export const TEST_USER_ID = 'test-user-123';
 export const TEST_USER_ID_2 = 'test-user-456';
+
+// Silence expected console errors during tests
+// These are testing error paths and the errors are expected behavior
+beforeAll(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
 // Export app for use in tests
 export { app };
