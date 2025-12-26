@@ -4,6 +4,7 @@
  * Initializes Firebase Admin SDK for server-side operations:
  * - Firestore database access
  * - Authentication token verification
+ * - Cloud Storage for photo uploads
  */
 
 import admin from 'firebase-admin';
@@ -23,6 +24,7 @@ export const initializeFirebase = (): admin.app.App => {
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
 
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
@@ -38,6 +40,7 @@ export const initializeFirebase = (): admin.app.App => {
       privateKey: privateKey.replace(/\\n/g, '\n'),
     }),
     projectId,
+    storageBucket: storageBucket || `${projectId}.appspot.com`,
   });
 
   isInitialized = true;
@@ -73,6 +76,25 @@ export const getAuth = (): admin.auth.Auth => {
     );
   }
   return admin.auth();
+};
+
+/**
+ * Get Firebase Storage instance
+ */
+export const getStorage = (): admin.storage.Storage => {
+  if (!firebaseApp) {
+    throw new Error(
+      'Firebase not initialized. Call initializeFirebase() first.'
+    );
+  }
+  return admin.storage();
+};
+
+/**
+ * Get the default storage bucket
+ */
+export const getBucket = (): ReturnType<admin.storage.Storage['bucket']> => {
+  return getStorage().bucket();
 };
 
 export default admin;

@@ -9,13 +9,14 @@
 
 import { getFirestore } from '../config/firebase.js';
 import { Timestamp } from 'firebase-admin/firestore';
-import type { Photo } from '../types/index.js';
-import type {
-  FirestorePhoto,
-  FirestoreAlbum,
-  FirestoreAlbumPage,
-  FirestoreAlbumWithPages,
-} from '../types/firestore.js';
+import {
+  type Photo,
+  type FirestorePhoto,
+  type FirestoreAlbum,
+  type FirestoreAlbumPage,
+  type FirestoreAlbumWithPages,
+  firestorePhotoToApi,
+} from '@photo-album/types';
 
 const db = () => getFirestore();
 
@@ -80,15 +81,7 @@ export const photoService = {
 
     return snapshot.docs.map((doc) => {
       const data = doc.data() as FirestorePhoto;
-      return {
-        id: doc.id,
-        name: data.name,
-        thumbnail: data.thumbnail,
-        fullSize: data.fullSize,
-        width: data.width,
-        height: data.height,
-        createdAt: data.createdAt.toDate().toISOString(),
-      };
+      return firestorePhotoToApi(data, doc.id);
     });
   },
 
@@ -109,15 +102,7 @@ export const photoService = {
       return null;
     }
 
-    return {
-      id: doc.id,
-      name: data.name,
-      thumbnail: data.thumbnail,
-      fullSize: data.fullSize,
-      width: data.width,
-      height: data.height,
-      createdAt: data.createdAt.toDate().toISOString(),
-    };
+    return firestorePhotoToApi(data, doc.id);
   },
 
   /**

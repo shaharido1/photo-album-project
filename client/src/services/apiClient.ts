@@ -98,6 +98,142 @@ export async function apiFetch<T>(
 }
 
 /**
+ * Upload a file with progress tracking
+ *
+ * @param endpoint - API endpoint
+ * @param file - File to upload
+ * @param fieldName - Form field name for the file
+ * @param onProgress - Progress callback (0-100)
+ * @returns Parsed JSON response
+ */
+export async function uploadFile<T>(
+  endpoint: ApiEndpoint | string,
+  file: File,
+  fieldName = 'photo',
+  onProgress?: (progress: number) => void
+): Promise<T> {
+  const authHeaders = await getAuthHeaders();
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText) as T;
+          resolve(response);
+        } catch {
+          reject(new Error('Failed to parse response'));
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText) as ApiError;
+          reject(new Error(errorData.error || `Upload failed with status ${xhr.status}`));
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload aborted'));
+    });
+
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    xhr.open('POST', endpoint);
+
+    // Set auth headers
+    Object.entries(authHeaders).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value as string);
+    });
+
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Upload multiple files with progress tracking
+ *
+ * @param endpoint - API endpoint
+ * @param files - Files to upload
+ * @param fieldName - Form field name for the files
+ * @param onProgress - Progress callback (0-100)
+ * @returns Parsed JSON response
+ */
+export async function uploadFiles<T>(
+  endpoint: ApiEndpoint | string,
+  files: File[],
+  fieldName = 'photos',
+  onProgress?: (progress: number) => void
+): Promise<T> {
+  const authHeaders = await getAuthHeaders();
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText) as T;
+          resolve(response);
+        } catch {
+          reject(new Error('Failed to parse response'));
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText) as ApiError;
+          reject(new Error(errorData.error || `Upload failed with status ${xhr.status}`));
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload aborted'));
+    });
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append(fieldName, file);
+    });
+
+    xhr.open('POST', endpoint);
+
+    // Set auth headers
+    Object.entries(authHeaders).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value as string);
+    });
+
+    xhr.send(formData);
+  });
+}
+
+/**
  * Convenience methods for common HTTP methods
  */
 export const api = {
@@ -134,5 +270,29 @@ export const api = {
    */
   delete<T>(endpoint: ApiEndpoint | string, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<T> {
     return apiFetch<T>(endpoint, { ...options, method: 'DELETE' });
+  },
+
+  /**
+   * Upload a single file
+   */
+  uploadFile<T>(
+    endpoint: ApiEndpoint | string,
+    file: File,
+    fieldName?: string,
+    onProgress?: (progress: number) => void
+  ): Promise<T> {
+    return uploadFile<T>(endpoint, file, fieldName, onProgress);
+  },
+
+  /**
+   * Upload multiple files
+   */
+  uploadFiles<T>(
+    endpoint: ApiEndpoint | string,
+    files: File[],
+    fieldName?: string,
+    onProgress?: (progress: number) => void
+  ): Promise<T> {
+    return uploadFiles<T>(endpoint, files, fieldName, onProgress);
   },
 };

@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  useCallback,
-  DragEvent,
-  ChangeEvent,
-} from 'react';
+import { useEffect, useRef, useState, useCallback, DragEvent, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +20,7 @@ import {
   GripVertical,
   AlertCircle,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 import {
   fetchPhotos,
@@ -35,9 +29,14 @@ import {
   selectPhotosError,
   selectSelectedPhotoIds,
   togglePhotoSelection,
-  addPhotos,
   deleteSelectedPhotos,
   clearSelection,
+  uploadPhotos,
+  selectUploadStatus,
+  selectUploadProgress,
+  selectUploadError,
+  resetUploadState,
+  deletePhotoFromServer,
 } from '@/features/photos/photosSlice';
 import {
   selectAlbumId,
@@ -48,64 +47,34 @@ import {
 } from '@/features/album/albumSlice';
 import { cn } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import type { Photo } from '@/types';
 
 // Accepted image types
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-// Generate unique ID
-const generateId = (): string =>
-  `upload-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+// Validate files before upload
+const validateFiles = (files: File[]): { valid: File[]; errors: string[] } => {
+  const valid: File[] = [];
+  const errors: string[] = [];
 
-// Process a single file into a photo object
-const processFile = (file: File): Promise<Photo> => {
-  return new Promise((resolve, reject) => {
+  files.forEach((file) => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      reject(
-        new Error(
-          `Invalid file type: ${file.name}. Accepted: JPEG, PNG, GIF, WebP`
-        )
-      );
-      return;
+      errors.push(`Invalid file type: ${file.name}. Accepted: JPEG, PNG, GIF, WebP`);
+    } else if (file.size > MAX_FILE_SIZE) {
+      errors.push(`File too large: ${file.name}. Maximum size: 20MB`);
+    } else {
+      valid.push(file);
     }
-
-    if (file.size > MAX_FILE_SIZE) {
-      reject(new Error(`File too large: ${file.name}. Maximum size: 20MB`));
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => {
-      resolve({
-        id: generateId(),
-        name: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
-        thumbnail: url,
-        fullSize: url,
-        width: img.naturalWidth,
-        height: img.naturalHeight,
-        createdAt: new Date().toISOString(),
-        isUploaded: true,
-      });
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error(`Failed to load image: ${file.name}`));
-    };
-
-    img.src = url;
   });
+
+  return { valid, errors };
 };
 
 export function PhotoLibraryPanel(): JSX.Element {
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const photos = useAppSelector(selectAllPhotos);
   const status = useAppSelector(selectPhotosStatus);
@@ -114,6 +83,9 @@ export function PhotoLibraryPanel(): JSX.Element {
   const albumId = useAppSelector(selectAlbumId);
   const currentPageIndex = useAppSelector(selectCurrentPageIndex);
   const currentPage = useAppSelector(selectCurrentPage);
+  const uploadStatus = useAppSelector(selectUploadStatus);
+  const uploadProgress = useAppSelector(selectUploadProgress);
+  const uploadError = useAppSelector(selectUploadError);
 
   useEffect(() => {
     if (status === 'idle') {
@@ -121,46 +93,36 @@ export function PhotoLibraryPanel(): JSX.Element {
     }
   }, [status, dispatch]);
 
+  // Reset upload state after successful upload
+  useEffect(() => {
+    if (uploadStatus === 'succeeded') {
+      const timer = setTimeout(() => {
+        dispatch(resetUploadState());
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [uploadStatus, dispatch]);
+
   const isLoading = status === 'loading';
   const hasError = status === 'failed';
+  const isUploading = uploadStatus === 'uploading';
 
-  // Process uploaded files
+  // Process uploaded files - upload to server
   const handleFiles = useCallback(
-    async (files: FileList | null): Promise<void> => {
+    (files: FileList | null): void => {
       if (!files || files.length === 0) return;
 
-      setIsUploading(true);
-      setUploadError(null);
-
       const fileArray = Array.from(files);
-      const results = await Promise.allSettled(fileArray.map(processFile));
-
-      const successfulPhotos: Photo[] = [];
-      const errors: string[] = [];
-
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          successfulPhotos.push(result.value);
-        } else {
-          errors.push(
-            result.reason instanceof Error
-              ? result.reason.message
-              : 'Unknown error'
-          );
-        }
-      });
-
-      if (successfulPhotos.length > 0) {
-        dispatch(addPhotos(successfulPhotos));
-      }
+      const { valid, errors } = validateFiles(fileArray);
 
       if (errors.length > 0) {
-        setUploadError(errors.join('\n'));
-        // Auto-clear error after 5 seconds
-        setTimeout(() => setUploadError(null), 5000);
+        setValidationError(errors.join('\n'));
+        setTimeout(() => setValidationError(null), 5000);
       }
 
-      setIsUploading(false);
+      if (valid.length > 0) {
+        void dispatch(uploadPhotos(valid));
+      }
     },
     [dispatch]
   );
@@ -210,6 +172,10 @@ export function PhotoLibraryPanel(): JSX.Element {
 
   const handleDeleteSelected = (): void => {
     if (selectedIds.length === 0) return;
+    // Delete from server for each selected photo
+    selectedIds.forEach((id) => {
+      void dispatch(deletePhotoFromServer(id));
+    });
     dispatch(deleteSelectedPhotos());
   };
 
@@ -293,11 +259,39 @@ export function PhotoLibraryPanel(): JSX.Element {
           </Button>
         </div>
 
+        {/* Upload progress */}
+        {isUploading && uploadProgress && (
+          <div className="mt-2 p-2 bg-muted rounded text-xs">
+            <div className="flex items-center gap-2 mb-1">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>
+                Uploading {uploadProgress.current}/{uploadProgress.total}...
+              </span>
+            </div>
+            <div className="w-full bg-muted-foreground/20 rounded-full h-1.5">
+              <div
+                className="bg-primary h-1.5 rounded-full transition-all"
+                style={{ width: `${uploadProgress.progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Upload success message */}
+        {uploadStatus === 'succeeded' && (
+          <div className="mt-2 p-2 bg-green-500/10 border border-green-500/20 rounded text-xs text-green-600 flex items-center gap-1">
+            <Check className="h-3 w-3" />
+            <span>Photos uploaded successfully!</span>
+          </div>
+        )}
+
         {/* Upload error message */}
-        {uploadError && (
+        {(uploadError || validationError) && (
           <div className="mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-xs text-destructive flex items-start gap-1">
             <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
-            <span className="whitespace-pre-wrap">{uploadError}</span>
+            <span className="whitespace-pre-wrap">
+              {uploadError || validationError}
+            </span>
           </div>
         )}
 
