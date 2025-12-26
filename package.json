@@ -12,6 +12,8 @@
     "start": "npm --prefix server run start",
     "test": "npm --prefix server run test && npm --prefix client run test && npm run test:e2e",
     "test:server": "npm --prefix server run test",
+    "test:server:unit": "npm --prefix server run test:unit",
+    "test:server:integration": "npm --prefix server run test:integration",
     "test:client": "npm --prefix client run test",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",

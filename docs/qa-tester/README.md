@@ -49,23 +49,53 @@ Developer → Code Review → [QA Tester] → UX → Docs → DevOps
 ### 2. Run Unit Tests
 
 ```bash
-# Server tests
-cd server && npm test
+# Server unit tests only
+npm run test:server:unit
 
 # Client tests
-cd client && npm test
+npm run test:client
 
-# Run both
-npm test
+# All server tests (unit + integration)
+npm run test:server
 ```
 
-### 3. E2E Test Coverage
+### 3. Server Integration Tests
+
+Integration tests verify API endpoints work correctly end-to-end using Supertest.
+
+**Run Integration Tests:**
+```bash
+# Server integration tests only
+npm run test:server:integration
+
+# Or from server directory
+cd server && npm run test:integration
+```
+
+**What Integration Tests Cover:**
+- [ ] All REST API endpoints (CRUD operations)
+- [ ] Authentication middleware
+- [ ] Request validation
+- [ ] Error handling and status codes
+- [ ] File upload operations
+
+**Integration Test Files:**
+| File | Coverage |
+|------|----------|
+| `server/tests/routes/health.test.ts` | Health check endpoints |
+| `server/tests/routes/auth.test.ts` | Authentication & middleware |
+| `server/tests/routes/photos.test.ts` | Photos CRUD & uploads |
+| `server/tests/routes/albums.test.ts` | Albums CRUD & pages |
+| `server/tests/routes/feedback.test.ts` | GitHub feedback integration |
+| `server/tests/routes/public.test.ts` | Public API endpoints |
+
+### 4. E2E Test Coverage
 
 - [ ] New user flows have E2E tests
 - [ ] Critical paths are covered
 - [ ] Auth flows are tested (if applicable)
 
-### 4. Run E2E Tests
+### 5. Run E2E Tests
 
 ```bash
 # Run Playwright tests
@@ -78,7 +108,7 @@ npx playwright test --ui
 npx playwright test e2e/auth.spec.ts
 ```
 
-### 5. Manual Verification with Playwright MCP
+### 6. Manual Verification with Playwright MCP
 
 **After automated tests pass**, use Playwright MCP for visual verification:
 
@@ -100,7 +130,8 @@ See [playwright-mcp.md](./playwright-mcp.md) for detailed usage.
 
 | Type | Location | Framework |
 |------|----------|-----------|
-| Server Unit | `server/tests/*.test.ts` | Jest |
+| Server Unit | `server/tests/middleware/*.test.ts` | Jest |
+| Server Integration | `server/tests/routes/*.test.ts` | Jest + Supertest |
 | Client Unit | `client/src/**/*.test.tsx` | Jest + RTL |
 | E2E | `e2e/*.spec.ts` | Playwright |
 
@@ -123,6 +154,38 @@ describe('functionName', () => {
 
   it('should throw on invalid input', () => {
     expect(() => functionName(invalid)).toThrow();
+  });
+});
+```
+
+### Integration Test Template (Supertest)
+
+```typescript
+// server/tests/routes/example.test.ts
+import request from 'supertest';
+import { app, TEST_USER_ID } from '../setup.js';
+
+describe('GET /api/example', () => {
+  it('should return 401 without auth', async () => {
+    const response = await request(app).get('/api/example');
+    expect(response.status).toBe(401);
+  });
+
+  it('should return data with valid auth', async () => {
+    const response = await request(app)
+      .get('/api/example')
+      .set('X-Test-User-Id', TEST_USER_ID);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('data');
+  });
+
+  it('should handle not found', async () => {
+    const response = await request(app)
+      .get('/api/example/nonexistent')
+      .set('X-Test-User-Id', TEST_USER_ID);
+
+    expect(response.status).toBe(404);
   });
 });
 ```
@@ -193,6 +256,7 @@ After QA, report findings:
 
 ### Test Results:
 - Unit Tests: [PASS/FAIL] (X tests)
+- Integration Tests: [PASS/FAIL] (X tests)
 - E2E Tests: [PASS/FAIL] (X tests)
 - Manual Verification: [PASS/FAIL]
 

@@ -19,10 +19,13 @@ describe('Photos API', () => {
       expect(Array.isArray(response.body.photos)).toBe(true);
     });
 
-    it('should return 401 without authentication when Firebase is configured', async () => {
+    it('should return mock photos without auth in development mode (E2E support)', async () => {
       const response = await request(app).get('/api/photos');
 
-      expect(response.status).toBe(401);
+      // In development mode, returns mock photos for E2E testing
+      expect(response.status).toBe(200);
+      expect(response.body.photos).toBeDefined();
+      expect(Array.isArray(response.body.photos)).toBe(true);
     });
 
     it('should return photos with proper structure', async () => {

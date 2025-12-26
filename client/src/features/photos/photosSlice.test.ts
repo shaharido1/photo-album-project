@@ -318,4 +318,227 @@ describe('photosSlice', () => {
       expect(newState.selectedIds).toEqual(['photo-1', 'photo-2']);
     });
   });
+
+  describe('setUploadProgress', () => {
+    it('should set upload progress', () => {
+      const progress: UploadProgress = {
+        current: 2,
+        total: 5,
+        progress: 40,
+      };
+
+      const newState = photosReducer(initialState, setUploadProgress(progress));
+
+      expect(newState.uploadProgress).toEqual(progress);
+    });
+  });
+
+  describe('resetUploadState', () => {
+    it('should reset upload state', () => {
+      const stateWithUpload: PhotosState = {
+        ...initialState,
+        uploadStatus: 'uploading',
+        uploadProgress: { current: 2, total: 5, progress: 40 },
+        uploadError: 'Some error',
+      };
+
+      const newState = photosReducer(stateWithUpload, resetUploadState());
+
+      expect(newState.uploadStatus).toBe('idle');
+      expect(newState.uploadProgress).toBeNull();
+      expect(newState.uploadError).toBeNull();
+    });
+  });
+
+  describe('async thunk extra reducers', () => {
+    describe('fetchPhotos', () => {
+      it('should set loading state on pending', () => {
+        const action = { type: fetchPhotos.pending.type };
+        const newState = photosReducer(initialState, action);
+
+        expect(newState.status).toBe('loading');
+      });
+
+      it('should set items on fulfilled', () => {
+        const photos = [mockPhoto, mockPhoto2];
+        const action = {
+          type: fetchPhotos.fulfilled.type,
+          payload: photos,
+        };
+        const newState = photosReducer(initialState, action);
+
+        expect(newState.status).toBe('succeeded');
+        expect(newState.items).toEqual(photos);
+      });
+
+      it('should set error on rejected', () => {
+        const action = {
+          type: fetchPhotos.rejected.type,
+          error: { message: 'Failed to fetch' },
+        };
+        const newState = photosReducer(initialState, action);
+
+        expect(newState.status).toBe('failed');
+        expect(newState.error).toBe('Failed to fetch');
+      });
+
+      it('should set default error message if none provided', () => {
+        const action = {
+          type: fetchPhotos.rejected.type,
+          error: {},
+        };
+        const newState = photosReducer(initialState, action);
+
+        expect(newState.error).toBe('Unknown error');
+      });
+    });
+
+    describe('uploadPhotos', () => {
+      it('should set uploading state on pending', () => {
+        const action = { type: uploadPhotos.pending.type };
+        const newState = photosReducer(initialState, action);
+
+        expect(newState.uploadStatus).toBe('uploading');
+        expect(newState.uploadError).toBeNull();
+        expect(newState.uploadProgress).toEqual({
+          current: 0,
+          total: 0,
+          progress: 0,
+        });
+      });
+
+      it('should add photos and reset progress on fulfilled', () => {
+        const uploadedPhotos = [mockPhoto, mockPhoto2];
+        const stateUploading: PhotosState = {
+          ...initialState,
+          uploadStatus: 'uploading',
+          uploadProgress: { current: 2, total: 2, progress: 100 },
+        };
+
+        const action = {
+          type: uploadPhotos.fulfilled.type,
+          payload: { photos: uploadedPhotos },
+        };
+        const newState = photosReducer(stateUploading, action);
+
+        expect(newState.uploadStatus).toBe('succeeded');
+        expect(newState.uploadProgress).toBeNull();
+        expect(newState.items).toHaveLength(2);
+        expect(newState.items[0].id).toBe('photo-1');
+      });
+
+      it('should set error on rejected', () => {
+        const action = {
+          type: uploadPhotos.rejected.type,
+          payload: 'Upload failed',
+        };
+        const newState = photosReducer(initialState, action);
+
+        expect(newState.uploadStatus).toBe('failed');
+        expect(newState.uploadError).toBe('Upload failed');
+        expect(newState.uploadProgress).toBeNull();
+      });
+    });
+
+    describe('deletePhotoFromServer', () => {
+      it('should remove photo from items on fulfilled', () => {
+        const stateWithPhotos: PhotosState = {
+          ...initialState,
+          items: [mockPhoto, mockPhoto2],
+          selectedIds: ['photo-1'],
+        };
+
+        const action = {
+          type: deletePhotoFromServer.fulfilled.type,
+          payload: 'photo-1',
+        };
+        const newState = photosReducer(stateWithPhotos, action);
+
+        expect(newState.items).toHaveLength(1);
+        expect(newState.items[0].id).toBe('photo-2');
+        expect(newState.selectedIds).not.toContain('photo-1');
+      });
+    });
+  });
+
+  describe('selectors', () => {
+    const mockRootState = {
+      photos: {
+        items: [mockPhoto, mockPhoto2],
+        selectedIds: ['photo-1'],
+        status: 'succeeded' as const,
+        error: null,
+        uploadStatus: 'idle' as const,
+        uploadProgress: null,
+        uploadError: null,
+      },
+    };
+
+    it('selectAllPhotos should return all photos', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectAllPhotos(mockRootState)).toEqual([mockPhoto, mockPhoto2]);
+    });
+
+    it('selectPhotosStatus should return status', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectPhotosStatus(mockRootState)).toBe('succeeded');
+    });
+
+    it('selectPhotosError should return error', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectPhotosError(mockRootState)).toBeNull();
+
+      const stateWithError = {
+        photos: { ...mockRootState.photos, error: 'Test error' },
+      };
+      // @ts-expect-error - partial state for testing
+      expect(selectPhotosError(stateWithError)).toBe('Test error');
+    });
+
+    it('selectSelectedPhotoIds should return selected ids', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectSelectedPhotoIds(mockRootState)).toEqual(['photo-1']);
+    });
+
+    it('selectSelectedPhotos should return selected photos', () => {
+      // @ts-expect-error - partial state for testing
+      const selectedPhotos = selectSelectedPhotos(mockRootState);
+      expect(selectedPhotos).toHaveLength(1);
+      expect(selectedPhotos[0].id).toBe('photo-1');
+    });
+
+    it('selectUploadStatus should return upload status', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectUploadStatus(mockRootState)).toBe('idle');
+    });
+
+    it('selectUploadProgress should return upload progress', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectUploadProgress(mockRootState)).toBeNull();
+
+      const stateWithProgress = {
+        photos: {
+          ...mockRootState.photos,
+          uploadProgress: { current: 1, total: 3, progress: 33 },
+        },
+      };
+      // @ts-expect-error - partial state for testing
+      expect(selectUploadProgress(stateWithProgress)).toEqual({
+        current: 1,
+        total: 3,
+        progress: 33,
+      });
+    });
+
+    it('selectUploadError should return upload error', () => {
+      // @ts-expect-error - partial state for testing
+      expect(selectUploadError(mockRootState)).toBeNull();
+
+      const stateWithError = {
+        photos: { ...mockRootState.photos, uploadError: 'Upload failed' },
+      };
+      // @ts-expect-error - partial state for testing
+      expect(selectUploadError(stateWithError)).toBe('Upload failed');
+    });
+  });
 });

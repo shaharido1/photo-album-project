@@ -100,7 +100,10 @@ npx eslint .                # Lint
 npx prettier --write .      # Format
 
 # Testing
-npm test                    # All unit tests
+npm test                    # All tests (unit + integration + E2E)
+npm run test:server:unit    # Server unit tests only
+npm run test:server:integration  # Server integration tests (API endpoints)
+npm run test:client         # Client unit tests
 npm run test:e2e            # Playwright E2E
 
 # Local CI (run before pushing)
@@ -124,7 +127,7 @@ curl -X POST 'https://api.render.com/v1/services/srv-d56juo6uk2gs73ci8bgg/deploy
 | Backend | Node.js + Express + TypeScript |
 | Database | Firebase Firestore |
 | Auth | Firebase Auth (Google Sign-In) |
-| Testing | Jest + RTL + Playwright |
+| Testing | Jest + Supertest + RTL + Playwright |
 | CI/CD | GitHub Actions → GHCR → Render |
 
 ---
