@@ -64,11 +64,6 @@ All UI components must:
 - [ ] Basic text styling (font, size, color, alignment)
 - [ ] Photo captions (optional per-photo text)
 
-### 7. Page Backgrounds
-
-- [x] Solid color backgrounds
-- [x] Preset background colors/themes
-- [x] White, black, cream defaults
 
 ### 8. Preview
 

@@ -1,145 +1,148 @@
-# Project: Hello World Full-Stack App
+# Photo Album Project
 
 ## Quick Links
 
 - **Live App:** https://photo-album-project.onrender.com
 - **GitHub:** https://github.com/shaharido1/photo-album-project
-- **GHCR Image:** ghcr.io/shaharido1/photo-album-project:latest
+- **Render Service ID:** srv-d56juo6uk2gs73ci8bgg
 
-## Documentation
+---
 
-- [Architecture Overview](docs/architecture.md) - Tech stack, project structure, and application flow
-- [Firebase Integration](docs/firebase.md) - Firestore database and Google Sign-In authentication
-- [CI/CD Pipeline](docs/cicd.md) - GitHub Actions, Render deployment, and manual operations
-- [Versioning](docs/versioning.md) - Semantic versioning, git hooks, and Docker image tagging
-- [Playwright MCP Guide](docs/playwright-mcp.md) - Interactive testing with Playwright MCP tools
+## Developer Role (Base)
 
-## Development Guidelines
+You are the developer implementing features. Follow these guidelines:
 
-### IMPORTANT: For Every Feature/Change
+### Before Implementation
 
-1. **Run type check** 
-2. **Run Lint** - ESLint and Prettier must pass
-3. **Write/Update Tests** - Every feature must have corresponding tests
-4. **Run All Tests Before Committing** - Unit, integration, and E2E tests must pass
-5. **Update Documentation** - Keep `docs/` files in sync with any architectural or CI/CD changes
+1. **Use Context7 for third-party libraries** - Always fetch up-to-date docs before using React, Redux, Firebase, Playwright, or any external API
+2. **Use TodoWrite** - Break down complex tasks, track progress
+3. **Check existing patterns** - Look at how similar features are implemented
 
-### Pre-Commit Checklist
+### During Implementation
 
-For any new feature or bug fix, the easiest approach is to run the local CI pipeline:
+1. **TypeScript** - Use proper types, avoid `any`
+2. **Lint as you go** - Run `npx eslint . --fix` frequently
+3. **Keep functions small** - Under 50 lines ideally
+
+### Before Handoff
+
+**CRITICAL: Run these before marking feature complete:**
 
 ```bash
-npm run ci:local    # Runs ALL checks in Docker (recommended before pushing)
+# Type check
+npx tsc --noEmit
+
+# Lint
+npx eslint .
+
+# Format
+npx prettier --check "**/*.{js,jsx,ts,tsx,json}"
 ```
 
-This runs the full CI pipeline locally in Docker, matching the GitHub Actions environment exactly:
-- TypeScript typecheck
-- ESLint
-- Prettier
-- Server unit tests
-- Client unit tests
-- E2E tests (Playwright)
-- Production Docker build validation
+Fix any issues before proceeding to review pipeline.
 
-Alternatively, you can run checks individually:
+---
 
-1. **Run Linting**
+## Feature Pipeline
 
-   ```bash
-   npx eslint .                           # Run ESLint
-   npx prettier --check "**/*.{js,jsx,json}"  # Check Prettier formatting
-   npx prettier --write "**/*.{js,jsx,json}"  # Fix Prettier formatting
-   ```
+After implementation, features go through this sequential review:
 
-2. **Write Unit Tests**
-   - Server: Add tests in `server/tests/`
-   - Client: Add tests in component files (`*.test.tsx`)
+```
+Developer → /review → /qa → /ux → /docs → /deploy
+```
 
-3. **Run Unit Tests**
+Or run all at once:
+```
+/feature
+```
 
-   ```bash
-   cd server && npm test       # Server unit tests
-   cd client && npm test       # Client unit tests
-   ```
+### Skills
 
-4. **Run E2E Tests with Playwright**
+| Skill | Role | Documentation |
+|-------|------|---------------|
+| `/review` | Code Reviewer | [docs/code-reviewer/](docs/code-reviewer/) |
+| `/qa` | QA Tester | [docs/qa-tester/](docs/qa-tester/) |
+| `/ux` | UX Reviewer | [docs/ux-reviewer/](docs/ux-reviewer/) |
+| `/docs` | Documenter | [docs/documenter/](docs/documenter/) |
+| `/deploy` | DevOps | [docs/devops/](docs/devops/) |
+| `/feature` | Full Pipeline | Runs all roles in sequence |
 
-   ```bash
-   npm run test:e2e            # Run Playwright E2E tests
-   ```
+### Pipeline Rules
 
-5. **Use Playwright MCP for Interactive Testing**
-   - See [Playwright MCP Guide](docs/playwright-mcp.md) for detailed usage instructions
+1. **Each role must pass before the next runs**
+2. **Fast checks first** - Lint/type before slow Playwright MCP
+3. **Block commits until pipeline passes**
 
-## Tech Stack
+---
 
-- **Backend:** Node.js + Express + TypeScript
-- **Frontend:** React + Redux Toolkit + Vite + TypeScript
-- **Database:** Firebase Firestore
-- **Authentication:** Firebase Auth (Google Sign-In)
-- **Testing:** Jest + React Testing Library + Playwright
-- **Linting:** ESLint (v9 flat config) + Prettier
-- **Container:** Docker
-- **CI/CD:** GitHub Actions → GHCR → Render
+## Role Documentation
+
+| Role | Purpose | Docs |
+|------|---------|------|
+| Developer | Implementation guidelines | [docs/developer/](docs/developer/) |
+| Code Reviewer | Code quality, types, style | [docs/code-reviewer/](docs/code-reviewer/) |
+| QA Tester | Unit tests, E2E, coverage | [docs/qa-tester/](docs/qa-tester/) |
+| UX Reviewer | Visual review, user flows | [docs/ux-reviewer/](docs/ux-reviewer/) |
+| Documenter | Keep docs in sync | [docs/documenter/](docs/documenter/) |
+| DevOps | Deploy, monitor, verify | [docs/devops/](docs/devops/) |
+
+---
 
 ## Key Commands
 
 ```bash
-# Development (without Docker)
-npm run dev                 # Run both server & client with hot reload
-# → Frontend: http://localhost:5173 | Backend: http://localhost:3001
+# Development
+npm run dev                 # Frontend: localhost:5173 | Backend: localhost:3001
 
-# Linting
-npx eslint .                # Run ESLint
-npx prettier --write .      # Format with Prettier
+# Quality Checks
+npx tsc --noEmit            # Type check
+npx eslint .                # Lint
+npx prettier --write .      # Format
 
-# Unit Testing
-cd server && npm test       # Run server tests
-cd client && npm test       # Run client tests
+# Testing
+npm test                    # All unit tests
+npm run test:e2e            # Playwright E2E
 
-# E2E Testing
-npm run test:e2e            # Run Playwright E2E tests
-npx playwright test --ui    # Run with Playwright UI
+# Local CI (run before pushing)
+npm run ci:local            # Full pipeline in Docker
 
-# All Tests
-npm test                    # Run all unit tests
-npm run test:e2e            # Run E2E tests
+# Version
+npm run version:bump        # Bump patch version
 
-# Local CI (run full pipeline before pushing)
-npm run ci:local            # Runs lint, typecheck, unit tests, E2E in Docker
-
-# Docker
-docker-compose up           # Run full stack locally
-
-# Version Management
-npm run version:bump        # Bump patch version (auto on push to main)
-npm run version:bump:minor  # Bump minor version
-npm run version:bump:major  # Bump major version
-
-# Deployment (via Render API)
+# Deploy
 curl -X POST 'https://api.render.com/v1/services/srv-d56juo6uk2gs73ci8bgg/deploys' \
-  -H 'Authorization: Bearer $RENDER_API_KEY' \
-  -d '{}'
+  -H 'Authorization: Bearer $RENDER_API_KEY'
 ```
 
-## Project IDs
+---
 
-- **Render Service ID:** srv-d56juo6uk2gs73ci8bgg
-- **Render Owner ID:** tea-d56jpkeuk2gs73ci5rdg
+## Tech Stack
 
-## CI/CD Flow
+| Layer | Technology |
+|-------|------------|
+| Frontend | React + Redux Toolkit + Vite + TypeScript |
+| Backend | Node.js + Express + TypeScript |
+| Database | Firebase Firestore |
+| Auth | Firebase Auth (Google Sign-In) |
+| Testing | Jest + RTL + Playwright |
+| CI/CD | GitHub Actions → GHCR → Render |
+
+---
+
+## Project Structure
 
 ```
-Push → GitHub Actions (lint/test/e2e/build) → GHCR → Render (pull & deploy)
+├── client/                 # React frontend
+├── server/                 # Express backend
+├── e2e/                    # Playwright tests
+├── docs/                   # Role-based documentation
+│   ├── developer/          # Developer docs
+│   ├── code-reviewer/      # Review standards
+│   ├── qa-tester/          # Testing guides
+│   ├── ux-reviewer/        # UX review process
+│   ├── documenter/         # Documentation standards
+│   ├── devops/             # Deployment guides
+│   └── future-features.md  # Feature backlog
+├── .claude/skills/         # Claude Code skills
+└── CLAUDE.md               # This file
 ```
-
-Pipeline jobs:
-
-1. **Lint** - ESLint + Prettier
-2. **Test Server** - Jest unit tests
-3. **Test Client** - Jest + RTL unit tests
-4. **Test E2E** - Playwright browser tests
-5. **Build & Push** - Docker image to GHCR
-6. **Deploy** - Trigger Render (optional)
-
-All pipeline configuration is in `.github/workflows/ci.yml`.
