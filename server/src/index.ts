@@ -1,12 +1,17 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import apiRoutes from './routes/api.js';
-import { initializeFirebase } from './config/firebase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables from project root BEFORE other imports
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import apiRoutes from './routes/api.js';
+import { initializeFirebase } from './config/firebase.js';
 
 // Initialize Firebase Admin SDK
 try {
