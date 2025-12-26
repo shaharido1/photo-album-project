@@ -34,3 +34,8 @@ export const onAuthChange = jest.fn((callback: (user: null) => void) => {
   return () => {};
 });
 export const getIdToken = jest.fn(() => Promise.resolve(null));
+export const isAuthAvailable = jest.fn(() => true);
+export const subscribeToAuthChanges = jest.fn((callback: (user: null) => void) => {
+  callback(null);
+  return () => {};
+});

@@ -12,9 +12,9 @@ export default {
     '^konva$': '<rootDir>/src/__mocks__/konva.ts',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
   },
-  testMatch: ['**/*.test.{ts,tsx}'],
+  testMatch: ['**/*.test.{ts,tsx,js,jsx}'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/main.tsx',

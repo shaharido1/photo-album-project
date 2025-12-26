@@ -6,6 +6,7 @@ import fooReducer from './features/foo/fooSlice';
 import versionReducer from './features/version/versionSlice';
 import photosReducer from './features/photos/photosSlice';
 import albumReducer from './features/album/albumSlice';
+import authReducer from './features/auth/authSlice';
 import App from './App';
 
 // Mock canvas for Konva
@@ -43,9 +44,28 @@ const createTestStore = (preloadedState) => {
       version: versionReducer,
       photos: photosReducer,
       album: albumReducer,
+      auth: authReducer,
     },
     preloadedState,
   });
+};
+
+const defaultAuthState = {
+  user: null,
+  token: null,
+  status: 'idle',
+  error: null,
+  isInitialized: true,
+};
+
+const defaultPhotosState = {
+  items: [],
+  selectedIds: [],
+  status: 'idle',
+  error: null,
+  uploadStatus: 'idle',
+  uploadProgress: null,
+  uploadError: null,
 };
 
 describe('App', () => {
@@ -54,7 +74,7 @@ describe('App', () => {
       greeting: { message: '', status: 'idle', error: null },
       foo: { value: '', status: 'idle', error: null },
       version: { value: '1.0.0', status: 'succeeded', error: null },
-      photos: { items: [], selectedIds: [], status: 'idle', error: null },
+      photos: defaultPhotosState,
       album: {
         album: {
           id: null,
@@ -64,9 +84,12 @@ describe('App', () => {
           currentPageIndex: 0,
         },
         selectedSlot: null,
+        viewMode: 'book',
+        currentSpread: 0,
         status: 'idle',
         error: null,
       },
+      auth: defaultAuthState,
     });
 
     render(
@@ -77,8 +100,9 @@ describe('App', () => {
 
     // Check that the main layout elements are rendered
     expect(screen.getByText('Photo Album')).toBeInTheDocument();
-    expect(screen.getByText('Photo Library')).toBeInTheDocument();
-    expect(screen.getByText('Properties')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /new album/i })
+    ).toBeInTheDocument();
   });
 
   it('renders the New Album button', () => {
@@ -86,7 +110,7 @@ describe('App', () => {
       greeting: { message: '', status: 'idle', error: null },
       foo: { value: '', status: 'idle', error: null },
       version: { value: '1.0.0', status: 'succeeded', error: null },
-      photos: { items: [], selectedIds: [], status: 'idle', error: null },
+      photos: defaultPhotosState,
       album: {
         album: {
           id: null,
@@ -96,9 +120,12 @@ describe('App', () => {
           currentPageIndex: 0,
         },
         selectedSlot: null,
+        viewMode: 'book',
+        currentSpread: 0,
         status: 'idle',
         error: null,
       },
+      auth: defaultAuthState,
     });
 
     render(
@@ -117,7 +144,7 @@ describe('App', () => {
       greeting: { message: '', status: 'idle', error: null },
       foo: { value: '', status: 'idle', error: null },
       version: { value: '1.0.0', status: 'succeeded', error: null },
-      photos: { items: [], selectedIds: [], status: 'idle', error: null },
+      photos: defaultPhotosState,
       album: {
         album: {
           id: null,
@@ -127,9 +154,12 @@ describe('App', () => {
           currentPageIndex: 0,
         },
         selectedSlot: null,
+        viewMode: 'book',
+        currentSpread: 0,
         status: 'idle',
         error: null,
       },
+      auth: defaultAuthState,
     });
 
     render(
