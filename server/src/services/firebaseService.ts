@@ -110,11 +110,16 @@ export const photoService = {
    */
   async create(
     userId: string,
-    photo: Omit<Photo, 'id' | 'createdAt'>
+    photo: Omit<Photo, 'id' | 'createdAt'> & {
+      source?: 'upload' | 'google';
+      storageType?: 'firebase' | 'google-reference';
+      googlePhotoId?: string;
+      googlePhotoUrl?: string;
+    }
   ): Promise<Photo> {
     const now = Timestamp.now();
 
-    const docRef = await db().collection('photos').add({
+    const docData: Record<string, unknown> = {
       userId,
       name: photo.name,
       thumbnail: photo.thumbnail,
@@ -123,7 +128,14 @@ export const photoService = {
       height: photo.height,
       createdAt: now,
       updatedAt: now,
-    });
+    };
+
+    if (photo.source) docData.source = photo.source;
+    if (photo.storageType) docData.storageType = photo.storageType;
+    if (photo.googlePhotoId) docData.googlePhotoId = photo.googlePhotoId;
+    if (photo.googlePhotoUrl) docData.googlePhotoUrl = photo.googlePhotoUrl;
+
+    const docRef = await db().collection('photos').add(docData);
 
     return {
       id: docRef.id,
