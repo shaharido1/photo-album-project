@@ -1,0 +1,353 @@
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import type { RootState } from '@/app/store';
+import { api, API_ENDPOINTS } from '@/services/apiClient';
+import type {
+  GooglePhotosAlbum,
+  GooglePhotosMediaItem,
+  GooglePhotosStatusResponse,
+  GooglePhotosAlbumsResponse,
+  GooglePhotosListResponse,
+  OAuthStartResponse,
+  ImportPhotosResponse,
+  ImportOptions,
+} from '@photo-album/types';
+import { addPhotos } from '../photos/photosSlice';
+import type { Photo } from '@/types';
+
+interface GooglePhotosState {
+  // Connection status
+  isConnected: boolean;
+  connectedEmail: string | null;
+  connectedAt: string | null;
+  connectionStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  connectionError: string | null;
+
+  // Albums
+  albums: GooglePhotosAlbum[];
+  albumsNextPageToken: string | null;
+  albumsStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  albumsError: string | null;
+
+  // Photos
+  photos: GooglePhotosMediaItem[];
+  photosNextPageToken: string | null;
+  photosStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  photosError: string | null;
+  selectedAlbumId: string | null;
+
+  // Import
+  selectedPhotoIds: string[];
+  importStatus: 'idle' | 'importing' | 'succeeded' | 'failed';
+  importError: string | null;
+  importProgress: { imported: number; failed: number; total: number } | null;
+
+  // Dialog
+  isDialogOpen: boolean;
+}
+
+const initialState: GooglePhotosState = {
+  isConnected: false,
+  connectedEmail: null,
+  connectedAt: null,
+  connectionStatus: 'idle',
+  connectionError: null,
+
+  albums: [],
+  albumsNextPageToken: null,
+  albumsStatus: 'idle',
+  albumsError: null,
+
+  photos: [],
+  photosNextPageToken: null,
+  photosStatus: 'idle',
+  photosError: null,
+  selectedAlbumId: null,
+
+  selectedPhotoIds: [],
+  importStatus: 'idle',
+  importError: null,
+  importProgress: null,
+
+  isDialogOpen: false,
+};
+
+// Check connection status
+export const checkGooglePhotosStatus = createAsyncThunk<GooglePhotosStatusResponse>(
+  'googlePhotos/checkStatus',
+  async () => {
+    return await api.get<GooglePhotosStatusResponse>(API_ENDPOINTS.GOOGLE_PHOTOS_STATUS, {
+      authenticated: true,
+    });
+  }
+);
+
+// Start OAuth flow
+export const startGooglePhotosAuth = createAsyncThunk<string>(
+  'googlePhotos/startAuth',
+  async () => {
+    const response = await api.get<OAuthStartResponse>(API_ENDPOINTS.GOOGLE_PHOTOS_AUTH_START, {
+      authenticated: true,
+    });
+    return response.authUrl;
+  }
+);
+
+// Disconnect Google Photos
+export const disconnectGooglePhotos = createAsyncThunk<void>(
+  'googlePhotos/disconnect',
+  async () => {
+    await api.post(API_ENDPOINTS.GOOGLE_PHOTOS_DISCONNECT, undefined, {
+      authenticated: true,
+    });
+  }
+);
+
+// Fetch albums
+export const fetchGooglePhotosAlbums = createAsyncThunk<
+  GooglePhotosAlbumsResponse,
+  { pageToken?: string } | undefined
+>('googlePhotos/fetchAlbums', async (params) => {
+  const url = params?.pageToken
+    ? `${API_ENDPOINTS.GOOGLE_PHOTOS_ALBUMS}?pageToken=${params.pageToken}`
+    : API_ENDPOINTS.GOOGLE_PHOTOS_ALBUMS;
+
+  return await api.get<GooglePhotosAlbumsResponse>(url, {
+    authenticated: true,
+  });
+});
+
+// Fetch photos
+export const fetchGooglePhotosPhotos = createAsyncThunk<
+  GooglePhotosListResponse,
+  { albumId?: string; pageToken?: string } | undefined
+>('googlePhotos/fetchPhotos', async (params) => {
+  const searchParams = new URLSearchParams();
+  if (params?.albumId) searchParams.set('albumId', params.albumId);
+  if (params?.pageToken) searchParams.set('pageToken', params.pageToken);
+
+  const queryString = searchParams.toString();
+  const url = queryString
+    ? `${API_ENDPOINTS.GOOGLE_PHOTOS_PHOTOS}?${queryString}`
+    : API_ENDPOINTS.GOOGLE_PHOTOS_PHOTOS;
+
+  return await api.get<GooglePhotosListResponse>(url, {
+    authenticated: true,
+  });
+});
+
+// Import selected photos
+export const importGooglePhotos = createAsyncThunk<
+  ImportPhotosResponse,
+  { photoIds: string[]; options: ImportOptions },
+  { rejectValue: string }
+>('googlePhotos/importPhotos', async ({ photoIds, options }, { dispatch, rejectWithValue }) => {
+  try {
+    const response = await api.post<ImportPhotosResponse>(
+      API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT,
+      { photoIds, options },
+      { authenticated: true }
+    );
+
+    // Convert imported photos to Photo format and add to photos slice
+    if (response.imported > 0) {
+      // Refetch photos to get the newly imported ones
+      const photosResponse = await api.get<{ photos: Photo[] }>(API_ENDPOINTS.PHOTOS, {
+        authenticated: true,
+      });
+      // Get only the newly imported photos by their IDs
+      const importedPhotoIds = response.results
+        .filter((r) => r.success && r.photoId)
+        .map((r) => r.photoId!);
+      const newPhotos = photosResponse.photos.filter((p) => importedPhotoIds.includes(p.id));
+      if (newPhotos.length > 0) {
+        dispatch(addPhotos(newPhotos));
+      }
+    }
+
+    return response;
+  } catch (error) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Import failed');
+  }
+});
+
+const googlePhotosSlice = createSlice({
+  name: 'googlePhotos',
+  initialState,
+  reducers: {
+    openDialog: (state) => {
+      state.isDialogOpen = true;
+    },
+    closeDialog: (state) => {
+      state.isDialogOpen = false;
+      // Reset selection when closing
+      state.selectedPhotoIds = [];
+    },
+    selectAlbum: (state, action: PayloadAction<string | null>) => {
+      state.selectedAlbumId = action.payload;
+      // Reset photos when changing album
+      state.photos = [];
+      state.photosNextPageToken = null;
+      state.photosStatus = 'idle';
+      state.photosError = null;
+    },
+    togglePhotoSelection: (state, action: PayloadAction<string>) => {
+      const photoId = action.payload;
+      if (state.selectedPhotoIds.includes(photoId)) {
+        state.selectedPhotoIds = state.selectedPhotoIds.filter((id) => id !== photoId);
+      } else {
+        state.selectedPhotoIds.push(photoId);
+      }
+    },
+    selectAllPhotos: (state) => {
+      state.selectedPhotoIds = state.photos.map((p) => p.id);
+    },
+    clearPhotoSelection: (state) => {
+      state.selectedPhotoIds = [];
+    },
+    resetImportState: (state) => {
+      state.importStatus = 'idle';
+      state.importError = null;
+      state.importProgress = null;
+    },
+    setConnectedFromCallback: (state) => {
+      // Called when OAuth callback succeeds
+      state.isConnected = true;
+      state.connectionStatus = 'succeeded';
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Check status
+      .addCase(checkGooglePhotosStatus.pending, (state) => {
+        state.connectionStatus = 'loading';
+      })
+      .addCase(checkGooglePhotosStatus.fulfilled, (state, action) => {
+        state.connectionStatus = 'succeeded';
+        state.isConnected = action.payload.connected;
+        state.connectedEmail = action.payload.email ?? null;
+        state.connectedAt = action.payload.connectedAt ?? null;
+      })
+      .addCase(checkGooglePhotosStatus.rejected, (state, action) => {
+        state.connectionStatus = 'failed';
+        state.connectionError = action.error.message ?? 'Failed to check status';
+      })
+
+      // Start auth - just opens the OAuth URL
+      .addCase(startGooglePhotosAuth.fulfilled, (_, action) => {
+        // Redirect to Google OAuth
+        window.location.href = action.payload;
+      })
+      .addCase(startGooglePhotosAuth.rejected, (state, action) => {
+        state.connectionError = action.error.message ?? 'Failed to start authentication';
+      })
+
+      // Disconnect
+      .addCase(disconnectGooglePhotos.fulfilled, (state) => {
+        state.isConnected = false;
+        state.connectedEmail = null;
+        state.connectedAt = null;
+        state.albums = [];
+        state.photos = [];
+        state.selectedPhotoIds = [];
+      })
+
+      // Fetch albums
+      .addCase(fetchGooglePhotosAlbums.pending, (state) => {
+        state.albumsStatus = 'loading';
+      })
+      .addCase(fetchGooglePhotosAlbums.fulfilled, (state, action) => {
+        state.albumsStatus = 'succeeded';
+        // If no pageToken was used, replace albums; otherwise append
+        if (!action.meta.arg?.pageToken) {
+          state.albums = action.payload.albums;
+        } else {
+          state.albums = [...state.albums, ...action.payload.albums];
+        }
+        state.albumsNextPageToken = action.payload.nextPageToken;
+      })
+      .addCase(fetchGooglePhotosAlbums.rejected, (state, action) => {
+        state.albumsStatus = 'failed';
+        state.albumsError = action.error.message ?? 'Failed to fetch albums';
+      })
+
+      // Fetch photos
+      .addCase(fetchGooglePhotosPhotos.pending, (state) => {
+        state.photosStatus = 'loading';
+      })
+      .addCase(fetchGooglePhotosPhotos.fulfilled, (state, action) => {
+        state.photosStatus = 'succeeded';
+        // If no pageToken was used, replace photos; otherwise append
+        if (!action.meta.arg?.pageToken) {
+          state.photos = action.payload.photos;
+        } else {
+          state.photos = [...state.photos, ...action.payload.photos];
+        }
+        state.photosNextPageToken = action.payload.nextPageToken;
+      })
+      .addCase(fetchGooglePhotosPhotos.rejected, (state, action) => {
+        state.photosStatus = 'failed';
+        state.photosError = action.error.message ?? 'Failed to fetch photos';
+      })
+
+      // Import photos
+      .addCase(importGooglePhotos.pending, (state, action) => {
+        state.importStatus = 'importing';
+        state.importError = null;
+        state.importProgress = {
+          imported: 0,
+          failed: 0,
+          total: action.meta.arg.photoIds.length,
+        };
+      })
+      .addCase(importGooglePhotos.fulfilled, (state, action) => {
+        state.importStatus = 'succeeded';
+        state.importProgress = {
+          imported: action.payload.imported,
+          failed: action.payload.failed,
+          total: action.payload.imported + action.payload.failed,
+        };
+        // Clear selection after successful import
+        state.selectedPhotoIds = [];
+      })
+      .addCase(importGooglePhotos.rejected, (state, action) => {
+        state.importStatus = 'failed';
+        state.importError = (action.payload as string) ?? 'Import failed';
+      });
+  },
+});
+
+export const {
+  openDialog,
+  closeDialog,
+  selectAlbum,
+  togglePhotoSelection,
+  selectAllPhotos,
+  clearPhotoSelection,
+  resetImportState,
+  setConnectedFromCallback,
+} = googlePhotosSlice.actions;
+
+// Selectors
+export const selectGooglePhotosIsConnected = (state: RootState) => state.googlePhotos.isConnected;
+export const selectGooglePhotosConnectionStatus = (state: RootState) =>
+  state.googlePhotos.connectionStatus;
+export const selectGooglePhotosConnectedEmail = (state: RootState) =>
+  state.googlePhotos.connectedEmail;
+export const selectGooglePhotosAlbums = (state: RootState) => state.googlePhotos.albums;
+export const selectGooglePhotosAlbumsStatus = (state: RootState) => state.googlePhotos.albumsStatus;
+export const selectGooglePhotosPhotos = (state: RootState) => state.googlePhotos.photos;
+export const selectGooglePhotosPhotosStatus = (state: RootState) => state.googlePhotos.photosStatus;
+export const selectGooglePhotosSelectedAlbumId = (state: RootState) =>
+  state.googlePhotos.selectedAlbumId;
+export const selectGooglePhotosSelectedPhotoIds = (state: RootState) =>
+  state.googlePhotos.selectedPhotoIds;
+export const selectGooglePhotosImportStatus = (state: RootState) => state.googlePhotos.importStatus;
+export const selectGooglePhotosImportProgress = (state: RootState) =>
+  state.googlePhotos.importProgress;
+export const selectGooglePhotosIsDialogOpen = (state: RootState) => state.googlePhotos.isDialogOpen;
+export const selectGooglePhotosHasMoreAlbums = (state: RootState) =>
+  state.googlePhotos.albumsNextPageToken !== null;
+export const selectGooglePhotosHasMorePhotos = (state: RootState) =>
+  state.googlePhotos.photosNextPageToken !== null;
+
+export default googlePhotosSlice.reducer;

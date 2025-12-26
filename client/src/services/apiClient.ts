@@ -17,6 +17,13 @@ export const API_ENDPOINTS = {
   PHOTOS: '/api/photos',
   ALBUMS: '/api/albums',
   FEEDBACK: '/api/feedback',
+  // Google Photos endpoints
+  GOOGLE_PHOTOS_AUTH_START: '/api/google-photos/auth/start',
+  GOOGLE_PHOTOS_STATUS: '/api/google-photos/status',
+  GOOGLE_PHOTOS_DISCONNECT: '/api/google-photos/disconnect',
+  GOOGLE_PHOTOS_ALBUMS: '/api/google-photos/albums',
+  GOOGLE_PHOTOS_PHOTOS: '/api/google-photos/photos',
+  GOOGLE_PHOTOS_IMPORT: '/api/google-photos/import',
 } as const;
 
 export type ApiEndpoint = (typeof API_ENDPOINTS)[keyof typeof API_ENDPOINTS];

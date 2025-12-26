@@ -38,6 +38,8 @@ import {
   resetUploadState,
   deletePhotoFromServer,
 } from '@/features/photos/photosSlice';
+import { openDialog } from '@/features/googlePhotos/googlePhotosSlice';
+import { GooglePhotosDialog } from '@/features/googlePhotos/GooglePhotosDialog';
 import {
   selectAlbumId,
   selectCurrentPageIndex,
@@ -253,7 +255,12 @@ export function PhotoLibraryPanel(): JSX.Element {
             <Upload className="h-4 w-4 mr-1" />
             {isUploading ? 'Adding...' : 'Upload'}
           </Button>
-          <Button variant="outline" size="sm" className="flex-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => dispatch(openDialog())}
+          >
             <ImagePlus className="h-4 w-4 mr-1" />
             Google
           </Button>
@@ -428,6 +435,9 @@ export function PhotoLibraryPanel(): JSX.Element {
           )}
         </div>
       </ScrollArea>
+
+      {/* Google Photos Dialog */}
+      <GooglePhotosDialog />
     </div>
   );
 }
