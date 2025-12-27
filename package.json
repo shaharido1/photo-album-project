@@ -4,7 +4,7 @@
   "description": "Hello World full-stack app with Node.js, React-Redux, and Docker",
   "private": true,
   "scripts": {
-    "dev": "lsof -ti :5173 -ti :3001 | xargs kill -9 2>/dev/null; npx concurrently -n server,client -c blue,green \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "node scripts/dev.js",
     "dev:docker": "docker-compose up",
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
