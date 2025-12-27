@@ -192,12 +192,22 @@ export const AlbumResponseSchema = z.object({
 export type AlbumResponse = z.infer<typeof AlbumResponseSchema>;
 
 /**
+ * Album summary (lightweight, for listing)
+ */
+export const AlbumSummarySchema = AlbumSchema.pick({
+  id: true,
+  name: true,
+  size: true,
+  currentPageIndex: true,
+});
+
+export type AlbumSummary = z.infer<typeof AlbumSummarySchema>;
+
+/**
  * API response for listing albums
  */
 export const AlbumsResponseSchema = z.object({
-  albums: z.array(
-    AlbumSchema.pick({ id: true, name: true, size: true, currentPageIndex: true })
-  ),
+  albums: z.array(AlbumSummarySchema),
 });
 
 export type AlbumsResponse = z.infer<typeof AlbumsResponseSchema>;
@@ -279,6 +289,8 @@ export type SpreadInfo = z.infer<typeof SpreadInfoSchema>;
  */
 export const AlbumStateSchema = z.object({
   album: AlbumSchema,
+  albums: z.array(AlbumSummarySchema),
+  albumsStatus: z.enum(['idle', 'loading', 'succeeded', 'failed']),
   selectedSlot: SelectedSlotRefSchema.nullable(),
   viewMode: ViewModeSchema,
   currentSpread: z.number().int().min(0),

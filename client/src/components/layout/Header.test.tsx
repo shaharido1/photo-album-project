@@ -8,11 +8,7 @@ import albumReducer from '@/features/album/albumSlice';
 import photosReducer from '@/features/photos/photosSlice';
 import authReducer from '@/features/auth/authSlice';
 
-// Mock child components
-jest.mock('@/components/album/CreateAlbumDialog', () => ({
-  CreateAlbumDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="create-album-dialog">Create Album Dialog</div> : null,
-}));
+// Mock child components - CreateAlbumDialog is now managed by EditorLayout, not Header
 
 jest.mock('@/components/feedback/FeedbackDialog', () => ({
   FeedbackDialog: ({ open }: { open: boolean }) =>
@@ -48,6 +44,8 @@ describe('Header', () => {
             pages: [],
             currentPageIndex: 0,
           },
+          albums: [],
+          albumsStatus: 'idle',
           selectedSlot: null,
           viewMode: 'book',
           currentSpread: 0,
@@ -74,12 +72,12 @@ describe('Header', () => {
       },
     });
 
-  const renderHeader = (storeOverrides = {}) => {
+  const renderHeader = (storeOverrides = {}, onCreateAlbum?: () => void) => {
     const store = createTestStore(storeOverrides);
     return {
       ...render(
         <Provider store={store}>
-          <Header />
+          <Header onCreateAlbum={onCreateAlbum} />
         </Provider>
       ),
       store,
@@ -222,19 +220,25 @@ describe('Header', () => {
     });
   });
 
-  describe('Create Album dialog', () => {
-    it('should open create album dialog when New Album button is clicked', async () => {
+  describe('Create Album button', () => {
+    it('should call onCreateAlbum callback when New Album button is clicked', async () => {
       const user = userEvent.setup();
-      renderHeader();
-
-      expect(
-        screen.queryByTestId('create-album-dialog')
-      ).not.toBeInTheDocument();
+      const mockOnCreateAlbum = jest.fn();
+      renderHeader({}, mockOnCreateAlbum);
 
       const newAlbumButton = screen.getByRole('button', { name: /new album/i });
       await user.click(newAlbumButton);
 
-      expect(screen.getByTestId('create-album-dialog')).toBeInTheDocument();
+      expect(mockOnCreateAlbum).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not throw when onCreateAlbum is not provided', async () => {
+      const user = userEvent.setup();
+      renderHeader();
+
+      const newAlbumButton = screen.getByRole('button', { name: /new album/i });
+      // Should not throw
+      await user.click(newAlbumButton);
     });
   });
 

@@ -11,6 +11,7 @@ import admin from 'firebase-admin';
 
 let firebaseApp: admin.app.App | null = null;
 let isInitialized = false;
+let configuredBucket: string | null = null;
 
 /**
  * Initialize Firebase Admin SDK
@@ -32,6 +33,13 @@ export const initializeFirebase = (): admin.app.App => {
     );
   }
 
+  // Firebase Storage bucket - must be explicitly set via FIREBASE_STORAGE_BUCKET
+  // Go to Firebase Console > Storage to find your bucket name
+  configuredBucket = storageBucket || `${projectId}.appspot.com`;
+
+  // eslint-disable-next-line no-console
+  console.log('Firebase Storage bucket configured:', configuredBucket);
+
   firebaseApp = admin.initializeApp({
     credential: admin.credential.cert({
       projectId,
@@ -40,7 +48,7 @@ export const initializeFirebase = (): admin.app.App => {
       privateKey: privateKey.replace(/\\n/g, '\n'),
     }),
     projectId,
-    storageBucket: storageBucket || `${projectId}.appspot.com`,
+    storageBucket: configuredBucket,
   });
 
   isInitialized = true;
@@ -94,7 +102,12 @@ export const getStorage = (): admin.storage.Storage => {
  * Get the default storage bucket
  */
 export const getBucket = (): ReturnType<admin.storage.Storage['bucket']> => {
-  return getStorage().bucket();
+  if (!configuredBucket) {
+    throw new Error(
+      'Firebase not initialized. Call initializeFirebase() first.'
+    );
+  }
+  return getStorage().bucket(configuredBucket);
 };
 
 export default admin;

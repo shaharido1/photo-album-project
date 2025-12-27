@@ -11,6 +11,8 @@ import photosReducer, {
   deleteSelectedPhotos,
 } from '@/features/photos/photosSlice';
 import albumReducer from '@/features/album/albumSlice';
+import authReducer from '@/features/auth/authSlice';
+import googlePhotosReducer from '@/features/googlePhotos/googlePhotosSlice';
 import type { Photo } from '@/types';
 
 // Mock the API client
@@ -54,6 +56,8 @@ describe('PhotoLibraryPanel', () => {
       reducer: {
         photos: photosReducer,
         album: albumReducer,
+        auth: authReducer,
+        googlePhotos: googlePhotosReducer,
       },
       preloadedState: {
         photos: {
@@ -73,11 +77,32 @@ describe('PhotoLibraryPanel', () => {
             pages: [],
             currentPageIndex: 0,
           },
+          albums: [],
+          albumsStatus: 'idle',
           selectedSlot: null,
           viewMode: 'book',
           currentSpread: 0,
           status: 'idle',
           error: null,
+        },
+        auth: {
+          user: null,
+          token: null,
+          status: 'idle',
+          error: null,
+          isInitialized: true,
+        },
+        googlePhotos: {
+          albums: [],
+          albumsStatus: 'idle',
+          albumsNextPageToken: null,
+          selectedAlbum: null,
+          photos: [],
+          photosStatus: 'idle',
+          photosNextPageToken: null,
+          importProgress: null,
+          error: null,
+          isDialogOpen: false,
         },
         ...preloadedState,
       },
@@ -437,7 +462,7 @@ describe('PhotoLibraryPanel', () => {
     it('should show drop overlay when dragging files over', () => {
       renderPanel();
 
-      const panel = document.querySelector('.w-64')!;
+      const panel = screen.getByTestId('photo-library-panel');
 
       fireEvent.dragOver(panel, {
         dataTransfer: {
@@ -451,7 +476,7 @@ describe('PhotoLibraryPanel', () => {
     it('should hide drop overlay when drag leaves', () => {
       renderPanel();
 
-      const panel = document.querySelector('.w-64')!;
+      const panel = screen.getByTestId('photo-library-panel');
 
       fireEvent.dragOver(panel, {
         dataTransfer: {
