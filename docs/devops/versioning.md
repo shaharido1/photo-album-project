@@ -4,7 +4,9 @@ This document describes the version management system.
 
 ## Overview
 
-The project uses semantic versioning (semver) with automated bumping.
+The project uses semantic versioning (semver) with **developer-driven versioning**.
+
+**Key principle:** Version bumps happen on feature branches before merging to main. CI verifies the version was incremented but does not bump it automatically.
 
 Versions are synchronized across:
 - Root `package.json`
@@ -27,31 +29,69 @@ MAJOR.MINOR.PATCH
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Developer pushes to main                      │
+│              Developer creates feature branch                    │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Pre-push Git Hook                           │
+│              Developer implements feature                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Developer bumps version                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  • Bumps patch version (1.0.0 → 1.0.1)                         │
-│  • Updates all package.json files                               │
-│  • Amends commit to include version bump                        │
+│  npm run version:bump                                           │
+│  git add -A && git commit -m "Bump version"                     │
+│  git push                                                       │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      GitHub Actions                              │
+│              Create Pull Request                                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              CI: Version Check                                   │
+├─────────────────────────────────────────────────────────────────┤
+│  • Compares PR version vs main version                          │
+│  • FAILS if PR version <= main version                          │
+│  • Passes if PR version > main version                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              CI: After merge to main                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  • Tags Docker image with version                               │
 │  • Creates Git tag (v1.0.1)                                     │
+│  • Deploys to Render                                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Manual Version Bumping
+## Developer Workflow
+
+### Before Creating a PR
+
+**You MUST bump the version before your PR will pass CI:**
 
 ```bash
-# Bump patch (1.0.0 → 1.0.1)
+# 1. Bump the version
+npm run version:bump
+
+# 2. Commit the version change
+git add -A
+git commit -m "Bump version to $(node -p \"require('./package.json').version\")"
+
+# 3. Push and create PR
+git push
+```
+
+### Version Bump Commands
+
+```bash
+# Bump patch (1.0.0 → 1.0.1) - most common
 npm run version:bump
 
 # Bump minor (1.0.0 → 1.1.0)
@@ -74,28 +114,28 @@ node scripts/bump-version.js [major|minor|patch]
 | Bug fix | Patch |
 | New feature (backward compatible) | Minor |
 | Breaking change | Major |
-| Documentation only | No bump needed |
+| Documentation only | Patch (if PR to main) |
 
-## Git Hooks
+**Rule of thumb:** If it's going to main, bump the version.
 
-### Pre-push Hook
+## CI Version Check
 
-Automatically bumps patch version when pushing to `main`.
+The CI pipeline includes a `version-check` job that runs on pull requests:
 
-**Installation:**
+1. Gets the version from your PR branch
+2. Gets the version from main branch
+3. Compares them
+4. **Fails if your version is not greater than main**
 
-```bash
-# Automatic (runs on npm install)
-npm install
-
-# Manual
-node scripts/install-hooks.js
+If the check fails, you'll see:
 ```
+❌ ERROR: Version must be incremented!
 
-**Bypass (not recommended):**
+Current main version: 1.0.5
+Your PR version:      1.0.5
 
-```bash
-git push --no-verify
+Please run: npm run version:bump
+Then commit and push the changes.
 ```
 
 ## Docker Image Tags
@@ -110,7 +150,7 @@ Each image gets multiple tags:
 
 ## Git Tags
 
-CI creates git tags for each version:
+CI creates git tags for each version after merge to main:
 
 ```bash
 # List version tags
@@ -141,12 +181,10 @@ docker inspect ghcr.io/shaharido1/photo-album-project:latest \
 | `npm run version:bump` | Bump patch version |
 | `npm run version:bump:minor` | Bump minor version |
 | `npm run version:bump:major` | Bump major version |
-| `npm run prepare` | Install git hooks |
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `scripts/bump-version.js` | Version bumping logic |
-| `scripts/install-hooks.js` | Git hooks installer |
-| `scripts/hooks/pre-push` | Pre-push hook source |
+| `.github/workflows/ci.yml` | CI with version check |

@@ -6,6 +6,7 @@ import type {
   AlbumState,
   AlbumSizeKey,
   AlbumSizePresets,
+  AlbumSummary,
   CreateAlbumPayload,
   UpdatePageLayoutPayload,
   SetPageBackgroundPayload,
@@ -115,6 +116,8 @@ const initialState: AlbumState = {
     pages: [],
     currentPageIndex: 0,
   },
+  albums: [],
+  albumsStatus: 'idle',
   selectedSlot: null,
   viewMode: 'book',
   currentSpread: 0,
@@ -125,13 +128,6 @@ const initialState: AlbumState = {
 // ============================================
 // Async Thunks for Firebase Operations
 // ============================================
-
-interface AlbumSummary {
-  id: string;
-  name: string;
-  size: AlbumSizeKey;
-  currentPageIndex: number;
-}
 
 /**
  * Fetch all albums for the current user (summary list)
@@ -482,6 +478,19 @@ const albumSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    // fetchAlbums (list)
+    builder
+      .addCase(fetchAlbums.pending, (state) => {
+        state.albumsStatus = 'loading';
+      })
+      .addCase(fetchAlbums.fulfilled, (state, action) => {
+        state.albums = action.payload;
+        state.albumsStatus = 'succeeded';
+      })
+      .addCase(fetchAlbums.rejected, (state) => {
+        state.albumsStatus = 'failed';
+      });
+
     // fetchAlbum
     builder
       .addCase(fetchAlbum.pending, (state) => {
@@ -515,6 +524,15 @@ const albumSlice = createSlice({
               ? action.payload.pages
               : [createPage('single')],
         };
+        // Add to albums list if not already there
+        if (action.payload.id && !state.albums.find((a) => a.id === action.payload.id)) {
+          state.albums.unshift({
+            id: action.payload.id,
+            name: action.payload.name,
+            size: action.payload.size,
+            currentPageIndex: action.payload.currentPageIndex,
+          });
+        }
         state.selectedSlot = null;
         state.viewMode = 'book';
         state.currentSpread = 0;
@@ -547,7 +565,9 @@ const albumSlice = createSlice({
         state.status = 'loading';
         state.error = null;
       })
-      .addCase(deleteAlbum.fulfilled, (state) => {
+      .addCase(deleteAlbum.fulfilled, (state, action) => {
+        // Remove from albums list
+        state.albums = state.albums.filter((a) => a.id !== action.meta.arg);
         state.album = initialState.album;
         state.selectedSlot = null;
         state.viewMode = 'book';
@@ -610,6 +630,11 @@ export const selectSelectedSlot = (state: RootState): SelectedSlotRef | null =>
 export const selectAlbumStatus = (state: RootState): AlbumState['status'] =>
   state.album.status;
 export const selectAlbumError = (state: RootState): string | null => state.album.error;
+
+// Albums list selectors
+export const selectAlbums = (state: RootState): AlbumSummary[] => state.album.albums;
+export const selectAlbumsStatus = (state: RootState): AlbumState['albumsStatus'] =>
+  state.album.albumsStatus;
 
 // View mode selectors
 export const selectViewMode = (state: RootState): ViewMode => state.album.viewMode;

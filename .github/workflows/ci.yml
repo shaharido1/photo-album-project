@@ -11,6 +11,62 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  version-check:
+    name: Version Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR version
+        id: pr_version
+        run: |
+          PR_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$PR_VERSION" >> $GITHUB_OUTPUT
+          echo "PR version: $PR_VERSION"
+
+      - name: Get main branch version
+        id: main_version
+        run: |
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version")
+          echo "version=$MAIN_VERSION" >> $GITHUB_OUTPUT
+          echo "Main version: $MAIN_VERSION"
+
+      - name: Compare versions
+        run: |
+          PR_VERSION="${{ steps.pr_version.outputs.version }}"
+          MAIN_VERSION="${{ steps.main_version.outputs.version }}"
+
+          echo "Comparing versions:"
+          echo "  Main branch: $MAIN_VERSION"
+          echo "  PR branch:   $PR_VERSION"
+
+          # Parse versions
+          IFS='.' read -r PR_MAJOR PR_MINOR PR_PATCH <<< "$PR_VERSION"
+          IFS='.' read -r MAIN_MAJOR MAIN_MINOR MAIN_PATCH <<< "$MAIN_VERSION"
+
+          # Convert to comparable numbers (major*10000 + minor*100 + patch)
+          PR_NUM=$((PR_MAJOR * 10000 + PR_MINOR * 100 + PR_PATCH))
+          MAIN_NUM=$((MAIN_MAJOR * 10000 + MAIN_MINOR * 100 + MAIN_PATCH))
+
+          if [ "$PR_NUM" -le "$MAIN_NUM" ]; then
+            echo ""
+            echo "❌ ERROR: Version must be incremented!"
+            echo ""
+            echo "Current main version: $MAIN_VERSION"
+            echo "Your PR version:      $PR_VERSION"
+            echo ""
+            echo "Please run: npm run version:bump"
+            echo "Then commit and push the changes."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Version check passed: $MAIN_VERSION → $PR_VERSION"
+
   lint:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
