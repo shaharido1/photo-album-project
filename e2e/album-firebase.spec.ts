@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { BACKEND_URL, waitForBackend } from './test-utils';
 
 /**
  * Album Firebase Integration E2E Tests
@@ -12,15 +13,18 @@ const TEST_USER_ID = 'e2e-album-firebase-test-user';
 test.describe('Album Firebase Integration', () => {
   // Clean up any test albums before and after tests
   test.beforeEach(async ({ request }) => {
+    // Wait for backend to be ready
+    await waitForBackend(request);
+
     // Get all albums for test user and delete them
-    const listResponse = await request.get('/api/albums', {
+    const listResponse = await request.get(`${BACKEND_URL}/api/albums`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
     if (listResponse.ok()) {
       const data = await listResponse.json();
       for (const album of data.albums || []) {
-        await request.delete(`/api/albums/${album.id}`, {
+        await request.delete(`${BACKEND_URL}/api/albums/${album.id}`, {
           headers: { 'X-Test-User-Id': TEST_USER_ID },
         });
       }
@@ -29,14 +33,14 @@ test.describe('Album Firebase Integration', () => {
 
   test.afterEach(async ({ request }) => {
     // Clean up albums created during tests
-    const listResponse = await request.get('/api/albums', {
+    const listResponse = await request.get(`${BACKEND_URL}/api/albums`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
     if (listResponse.ok()) {
       const data = await listResponse.json();
       for (const album of data.albums || []) {
-        await request.delete(`/api/albums/${album.id}`, {
+        await request.delete(`${BACKEND_URL}/api/albums/${album.id}`, {
           headers: { 'X-Test-User-Id': TEST_USER_ID },
         });
       }
@@ -50,7 +54,7 @@ test.describe('Album Firebase Integration', () => {
     const albumSize = '8x8';
 
     // Create album via API
-    const createResponse = await request.post('/api/albums', {
+    const createResponse = await request.post(`${BACKEND_URL}/api/albums`, {
       headers: {
         'X-Test-User-Id': TEST_USER_ID,
         'Content-Type': 'application/json',
@@ -68,7 +72,7 @@ test.describe('Album Firebase Integration', () => {
     const albumId = createData.album.id;
 
     // Retrieve album to verify it was stored
-    const getResponse = await request.get(`/api/albums/${albumId}`, {
+    const getResponse = await request.get(`${BACKEND_URL}/api/albums/${albumId}`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
@@ -80,7 +84,7 @@ test.describe('Album Firebase Integration', () => {
     expect(getData.album.size).toBe(albumSize);
 
     // Verify album appears in list
-    const listResponse = await request.get('/api/albums', {
+    const listResponse = await request.get(`${BACKEND_URL}/api/albums`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
@@ -98,7 +102,7 @@ test.describe('Album Firebase Integration', () => {
     const albumName = `Pages Test Album ${Date.now()}`;
 
     // Create album
-    const createResponse = await request.post('/api/albums', {
+    const createResponse = await request.post(`${BACKEND_URL}/api/albums`, {
       headers: {
         'X-Test-User-Id': TEST_USER_ID,
         'Content-Type': 'application/json',
@@ -126,7 +130,7 @@ test.describe('Album Firebase Integration', () => {
       ],
     };
 
-    const addPageResponse = await request.post(`/api/albums/${albumId}/pages`, {
+    const addPageResponse = await request.post(`${BACKEND_URL}/api/albums/${albumId}/pages`, {
       headers: {
         'X-Test-User-Id': TEST_USER_ID,
         'Content-Type': 'application/json',
@@ -140,7 +144,7 @@ test.describe('Album Firebase Integration', () => {
     expect(pageResult.page.id).toBeDefined();
 
     // Verify page is in album
-    const getResponse = await request.get(`/api/albums/${albumId}`, {
+    const getResponse = await request.get(`${BACKEND_URL}/api/albums/${albumId}`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
@@ -158,7 +162,7 @@ test.describe('Album Firebase Integration', () => {
     const updatedName = `Updated Album ${Date.now()}`;
 
     // Create album
-    const createResponse = await request.post('/api/albums', {
+    const createResponse = await request.post(`${BACKEND_URL}/api/albums`, {
       headers: {
         'X-Test-User-Id': TEST_USER_ID,
         'Content-Type': 'application/json',
@@ -171,7 +175,7 @@ test.describe('Album Firebase Integration', () => {
     const albumId = createData.album.id;
 
     // Update album name
-    const updateResponse = await request.put(`/api/albums/${albumId}`, {
+    const updateResponse = await request.put(`${BACKEND_URL}/api/albums/${albumId}`, {
       headers: {
         'X-Test-User-Id': TEST_USER_ID,
         'Content-Type': 'application/json',
@@ -182,7 +186,7 @@ test.describe('Album Firebase Integration', () => {
     expect(updateResponse.status()).toBe(200);
 
     // Verify update persisted
-    const getResponse = await request.get(`/api/albums/${albumId}`, {
+    const getResponse = await request.get(`${BACKEND_URL}/api/albums/${albumId}`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
@@ -195,7 +199,7 @@ test.describe('Album Firebase Integration', () => {
     const albumName = `Delete Test Album ${Date.now()}`;
 
     // Create album
-    const createResponse = await request.post('/api/albums', {
+    const createResponse = await request.post(`${BACKEND_URL}/api/albums`, {
       headers: {
         'X-Test-User-Id': TEST_USER_ID,
         'Content-Type': 'application/json',
@@ -208,14 +212,14 @@ test.describe('Album Firebase Integration', () => {
     const albumId = createData.album.id;
 
     // Delete album
-    const deleteResponse = await request.delete(`/api/albums/${albumId}`, {
+    const deleteResponse = await request.delete(`${BACKEND_URL}/api/albums/${albumId}`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
     expect(deleteResponse.status()).toBe(204);
 
     // Verify album is gone
-    const getResponse = await request.get(`/api/albums/${albumId}`, {
+    const getResponse = await request.get(`${BACKEND_URL}/api/albums/${albumId}`, {
       headers: { 'X-Test-User-Id': TEST_USER_ID },
     });
 
