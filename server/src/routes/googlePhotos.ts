@@ -12,6 +12,7 @@ import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 import { googleOAuthService } from '../services/googleOAuthService.js';
 import { googlePhotosService } from '../services/googlePhotosService.js';
 import {
+  API_ENDPOINTS,
   ImportPhotosRequestSchema,
   type GooglePhotosAlbumsResponse,
   type GooglePhotosListResponse,
@@ -22,12 +23,21 @@ import {
 
 const router = Router();
 
+// Sub-paths relative to /api/google-photos
+const AUTH_START = API_ENDPOINTS.GOOGLE_PHOTOS_AUTH_START.replace('/api/google-photos', '');
+const AUTH_CALLBACK = '/auth/callback'; // Callback is hardcoded in Google Console usually
+const STATUS = API_ENDPOINTS.GOOGLE_PHOTOS_STATUS.replace('/api/google-photos', '');
+const DISCONNECT = API_ENDPOINTS.GOOGLE_PHOTOS_DISCONNECT.replace('/api/google-photos', '');
+const ALBUMS = API_ENDPOINTS.GOOGLE_PHOTOS_ALBUMS.replace('/api/google-photos', '');
+const PHOTOS = API_ENDPOINTS.GOOGLE_PHOTOS_PHOTOS.replace('/api/google-photos', '');
+const IMPORT = API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT.replace('/api/google-photos', '');
+
 /**
  * GET /api/google-photos/auth/start
  * Initiate OAuth flow - returns authorization URL
  */
 router.get(
-  '/auth/start',
+  AUTH_START,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -48,7 +58,7 @@ router.get(
  * GET /api/google-photos/auth/callback
  * OAuth callback - exchanges code for tokens and stores them
  */
-router.get('/auth/callback', async (req, res): Promise<void> => {
+router.get(AUTH_CALLBACK, async (req, res): Promise<void> => {
   try {
     const { code, state, error } = req.query;
 
@@ -88,7 +98,7 @@ router.get('/auth/callback', async (req, res): Promise<void> => {
  * Check if user has Google Photos connected
  */
 router.get(
-  '/status',
+  STATUS,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -115,7 +125,7 @@ router.get(
  * Disconnect Google Photos (revoke access)
  */
 router.post(
-  '/disconnect',
+  DISCONNECT,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -135,7 +145,7 @@ router.post(
  * List user's Google Photos albums
  */
 router.get(
-  '/albums',
+  ALBUMS,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -177,7 +187,7 @@ router.get(
  * List photos from Google Photos library
  */
 router.get(
-  '/photos',
+  PHOTOS,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -220,7 +230,7 @@ router.get(
  * Import selected photos from Google Photos
  */
 router.post(
-  '/import',
+  IMPORT,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {

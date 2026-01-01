@@ -5,8 +5,21 @@ import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 import { uploadSingle, uploadMultiple } from '../middleware/upload.js';
 import { photoService } from '../services/firebaseService.js';
 import { storageService, type StorageFile } from '../services/storageService.js';
+import {
+  API_ENDPOINTS,
+  type PhotosResponse,
+  type PhotoResponse,
+  PhotoSchema,
+} from '@photo-album/types';
 
 const router = Router();
+
+// Endpoint is relative to /api/photos
+// Constants for sub-paths
+const PHOTOS_ROOT = '/';
+const PHOTO_BY_ID = '/:id';
+const PHOTO_UPLOAD = '/upload';
+const PHOTO_UPLOAD_BATCH = '/upload/batch';
 
 // Extend Request type for file uploads
 interface UploadRequest extends AuthenticatedRequest {
@@ -14,10 +27,11 @@ interface UploadRequest extends AuthenticatedRequest {
   files?: Express.Multer.File[];
 }
 
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get(PHOTOS_ROOT, async (req: Request, res: Response): Promise<void> => {
   // If Firebase is not initialized, return mock data
   if (!isFirebaseInitialized()) {
-    res.json({ photos: mockPhotos });
+    const response: PhotosResponse = { photos: mockPhotos };
+    res.json(response);
     return;
   }
 
@@ -27,13 +41,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
   // In development without auth, return mock photos for E2E testing
   if (process.env.NODE_ENV !== 'production' && !hasAuthHeader && !hasTestHeader) {
-    res.json({ photos: mockPhotos });
+    const response: PhotosResponse = { photos: mockPhotos };
+    res.json(response);
     return;
   }
 
   // In non-production with test user header, return mock photos for E2E tests
   if (process.env.NODE_ENV !== 'production' && hasTestHeader) {
-    res.json({ photos: mockPhotos });
+    const response: PhotosResponse = { photos: mockPhotos };
+    res.json(response);
     return;
   }
 
@@ -44,10 +60,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const photos = await photoService.getAll(authReq.user!.uid);
       // In development, if user has no photos, return mock photos for testing
       if (process.env.NODE_ENV !== 'production' && photos.length === 0) {
-        res.json({ photos: mockPhotos });
+        const response: PhotosResponse = { photos: mockPhotos };
+        res.json(response);
         return;
       }
-      res.json({ photos });
+      const response: PhotosResponse = { photos };
+      res.json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error fetching photos:', error);
@@ -56,7 +74,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get(PHOTO_BY_ID, async (req: Request, res: Response): Promise<void> => {
   // If Firebase is not initialized, return mock data
   if (!isFirebaseInitialized()) {
     const photo = mockPhotos.find((p) => p.id === req.params.id);
@@ -64,7 +82,8 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ error: 'Photo not found' });
       return;
     }
-    res.json({ photo });
+    const response: PhotoResponse = { photo };
+    res.json(response);
     return;
   }
 
@@ -80,7 +99,8 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
         res.status(404).json({ error: 'Photo not found' });
         return;
       }
-      res.json({ photo });
+      const response: PhotoResponse = { photo };
+      res.json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error fetching photo:', error);
@@ -90,12 +110,20 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 });
 
 router.post(
-  '/',
+  PHOTOS_ROOT,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
+      // Validation using Zod
+      const parseResult = PhotoSchema.partial().safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({ error: 'Invalid photo data', details: parseResult.error.errors });
+        return;
+      }
+
       const photo = await photoService.create(req.user!.uid, req.body);
-      res.status(201).json({ photo });
+      const response: PhotoResponse = { photo };
+      res.status(201).json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error creating photo:', error);
@@ -106,7 +134,7 @@ router.post(
 
 // Upload a single photo
 router.post(
-  '/upload',
+  PHOTO_UPLOAD,
   authMiddleware,
   (req: Request, res: Response, next: NextFunction) => {
     uploadSingle(req, res, (err) => {
@@ -149,7 +177,8 @@ router.post(
         height: uploadResult.height,
       });
 
-      res.status(201).json({ photo });
+      const response: PhotoResponse = { photo };
+      res.status(201).json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error uploading photo:', error);
@@ -162,7 +191,7 @@ router.post(
 
 // Upload multiple photos
 router.post(
-  '/upload/batch',
+  PHOTO_UPLOAD_BATCH,
   authMiddleware,
   (req: Request, res: Response, next: NextFunction) => {
     uploadMultiple(req, res, (err) => {
@@ -240,7 +269,7 @@ router.post(
 );
 
 router.delete(
-  '/:id',
+  PHOTO_BY_ID,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {

@@ -3,13 +3,18 @@ import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { PackageJson } from '../types/index.js';
+import {
+  API_ENDPOINTS,
+  type HelloResponse,
+  type HealthResponse,
+  type FooResponse,
+  type VersionResponse,
+} from '@photo-album/types';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read version from root package.json
-// In production (Docker), the file is at /app/root-package.json
-// In development, it's at the project root (../../.. from routes/)
 const productionPath = '/app/root-package.json';
 const developmentPath = join(__dirname, '../../../package.json');
 const packageJsonPath = existsSync(productionPath)
@@ -22,20 +27,33 @@ const appVersion = rootPackageJson.version;
 
 const router = Router();
 
-router.get('/hello', (_req: Request, res: Response): void => {
-  res.json({ message: 'Hello World' });
+// Paths are relative to /api (or whatever is mounted)
+// But since public routes are often mounted at / by the stripApi helper in api.ts,
+// we should be careful.
+// Let's just use the relative part.
+const rel = (full: string) => full.replace('/api', '');
+
+router.get(rel(API_ENDPOINTS.HELLO), (_req: Request, res: Response): void => {
+  const response: HelloResponse = { message: 'Hello World' };
+  res.json(response);
 });
 
-router.get('/health', (_req: Request, res: Response): void => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+router.get(rel(API_ENDPOINTS.HEALTH), (_req: Request, res: Response): void => {
+  const response: HealthResponse = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  };
+  res.json(response);
 });
 
-router.get('/foo', (_req: Request, res: Response): void => {
-  res.json({ value: 'foo' });
+router.get(rel(API_ENDPOINTS.FOO), (_req: Request, res: Response): void => {
+  const response: FooResponse = { value: 'foo' };
+  res.json(response);
 });
 
-router.get('/version', (_req: Request, res: Response): void => {
-  res.json({ version: appVersion });
+router.get(rel(API_ENDPOINTS.VERSION), (_req: Request, res: Response): void => {
+  const response: VersionResponse = { version: appVersion };
+  res.json(response);
 });
 
 export default router;

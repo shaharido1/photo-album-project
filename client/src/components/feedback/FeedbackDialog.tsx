@@ -13,8 +13,12 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { api, API_ENDPOINTS } from '@/services/apiClient';
+import { api } from '@/services/apiClient';
 import { getIdToken } from '@/services/authService';
+import {
+  API_ENDPOINTS,
+  type FeedbackResponse,
+} from '@photo-album/types';
 
 interface FeedbackType {
   id: 'bug' | 'feature' | 'general';
@@ -56,10 +60,9 @@ export function FeedbackDialog({
   );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [success, setSuccess] = React.useState<{
-    number: number;
-    url: string;
-  } | null>(null);
+  const [success, setSuccess] = React.useState<FeedbackResponse['issue'] | null>(
+    null
+  );
 
   const resetForm = (): void => {
     setTitle('');
@@ -82,7 +85,7 @@ export function FeedbackDialog({
         return;
       }
 
-      const data = await api.post<{ issue: { number: number; url: string } }>(
+      const data = await api.post<FeedbackResponse>(
         API_ENDPOINTS.FEEDBACK,
         {
           title: title.trim(),

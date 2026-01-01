@@ -1,29 +1,28 @@
 import { Router, Response } from 'express';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
+import {
+  FeedbackRequestSchema,
+  type FeedbackResponse,
+} from '@photo-album/types';
 
 const router = Router();
-
-interface FeedbackRequest {
-  title: string;
-  description: string;
-  feedbackType?: 'bug' | 'feature' | 'general';
-}
 
 router.post(
   '/',
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const {
-        title,
-        description,
-        feedbackType = 'general',
-      } = req.body as FeedbackRequest;
+      const parseResult = FeedbackRequestSchema.safeParse(req.body);
 
-      if (!title || !description) {
-        res.status(400).json({ error: 'Title and description are required' });
+      if (!parseResult.success) {
+        res.status(400).json({
+          error: 'Invalid request',
+          details: parseResult.error.errors,
+        });
         return;
       }
+
+      const { title, description, feedbackType } = parseResult.data;
 
       const githubToken = process.env.GITHUB_TOKEN;
       if (!githubToken) {
@@ -78,13 +77,15 @@ ${description}
         html_url: string;
       };
 
-      res.status(201).json({
+      const result: FeedbackResponse = {
         success: true,
         issue: {
           number: issue.number,
           url: issue.html_url,
         },
-      });
+      };
+
+      res.status(201).json(result);
     } catch {
       res.status(500).json({ error: 'Failed to submit feedback' });
     }

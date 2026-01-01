@@ -1,20 +1,43 @@
 import { Router, Response } from 'express';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 import { albumService } from '../services/firebaseService.js';
+import {
+  API_ENDPOINTS,
+  type AlbumResponse,
+  type AlbumsResponse,
+  CreateAlbumPayloadSchema,
+  AlbumSchema,
+  firestoreAlbumToApi,
+  type AlbumSizeKey,
+} from '@photo-album/types';
 
 const router = Router();
+
+// Sub-paths
+const ALBUMS_ROOT = '/';
+const ALBUM_BY_ID = '/:id';
+const ALBUM_PAGES = '/:id/pages';
+const ALBUM_PAGE_BY_ID = '/:id/pages/:pageId';
 
 // ============================================
 // Albums CRUD
 // ============================================
 
 router.get(
-  '/',
+  ALBUMS_ROOT,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const albums = await albumService.getAll(req.user!.uid);
-      res.json({ albums });
+      const response: AlbumsResponse = {
+        albums: albums.map((a) => ({
+          id: a.id || null,
+          name: a.name,
+          size: a.size as AlbumSizeKey,
+          currentPageIndex: a.currentPageIndex,
+        })),
+      };
+      res.json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error fetching albums:', error);
@@ -24,7 +47,7 @@ router.get(
 );
 
 router.get(
-  '/:id',
+  ALBUM_BY_ID,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
@@ -33,7 +56,10 @@ router.get(
         res.status(404).json({ error: 'Album not found' });
         return;
       }
-      res.json({ album });
+      const response: AlbumResponse = {
+        album: firestoreAlbumToApi(album, album.id!),
+      };
+      res.json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error fetching album:', error);
@@ -43,13 +69,22 @@ router.get(
 );
 
 router.post(
-  '/',
+  ALBUMS_ROOT,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const { name, size } = req.body;
-      const album = await albumService.create(req.user!.uid, name, size);
-      res.status(201).json({ album });
+      const parseResult = CreateAlbumPayloadSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({ error: 'Invalid album data', details: parseResult.error.errors });
+        return;
+      }
+
+      const { name, size } = parseResult.data;
+      const album = await albumService.create(req.user!.uid, name!, size!);
+      const response: AlbumResponse = {
+        album: firestoreAlbumToApi(album, album.id!),
+      };
+      res.status(201).json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Error creating album:', error);
@@ -59,10 +94,17 @@ router.post(
 );
 
 router.put(
-  '/:id',
+  ALBUM_BY_ID,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
+      // Partial validation for update
+      const parseResult = AlbumSchema.partial().safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({ error: 'Invalid album data', details: parseResult.error.errors });
+        return;
+      }
+
       const success = await albumService.update(
         req.params.id,
         req.user!.uid,
@@ -82,7 +124,7 @@ router.put(
 );
 
 router.delete(
-  '/:id',
+  ALBUM_BY_ID,
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
