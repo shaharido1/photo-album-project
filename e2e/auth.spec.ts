@@ -229,12 +229,36 @@ test.describe('Server Auth Bypass (E2E Test Mode)', () => {
   // The server accepts X-Test-User-Id header in non-production mode
   // This tests that the server correctly handles authenticated requests
 
+  // Backend runs on port 4001 during E2E tests
+  const BACKEND_URL = 'http://localhost:4001';
+
+  // Helper to wait for backend to be ready
+  const waitForBackend = async (
+    request: import('@playwright/test').APIRequestContext,
+    maxAttempts = 30
+  ): Promise<void> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const response = await request.get(`${BACKEND_URL}/healthz`, {
+          timeout: 2000,
+        });
+        if (response.ok()) return;
+      } catch {
+        // Server not ready yet
+      }
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    throw new Error('Backend not ready after maximum attempts');
+  };
+
   test('should accept X-Test-User-Id header for authenticated endpoints', async ({
     request,
   }) => {
-    // Make a request to a protected endpoint with test user header
-    // Use relative path - goes through Vite proxy to backend
-    const response = await request.get('/api/albums', {
+    // Wait for backend to be ready
+    await waitForBackend(request);
+
+    // Make a request directly to backend with test user header
+    const response = await request.get(`${BACKEND_URL}/api/albums`, {
       headers: {
         'X-Test-User-Id': 'e2e-test-user-123',
       },
@@ -248,9 +272,11 @@ test.describe('Server Auth Bypass (E2E Test Mode)', () => {
   test('should return 401 without auth header for protected endpoints', async ({
     request,
   }) => {
-    // Make a request without any auth
-    // Use relative path - goes through Vite proxy to backend
-    const response = await request.get('/api/albums');
+    // Wait for backend to be ready
+    await waitForBackend(request);
+
+    // Make a request directly to backend without any auth
+    const response = await request.get(`${BACKEND_URL}/api/albums`);
 
     // Should return 401 unauthorized
     expect(response.status()).toBe(401);

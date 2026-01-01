@@ -22,7 +22,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `VITE_PORT=${TEST_CLIENT_PORT} VITE_API_PORT=${TEST_SERVER_PORT} PORT=${TEST_SERVER_PORT} npm run dev`,
+    command: `VITE_PORT=${TEST_CLIENT_PORT} VITE_API_PORT=${TEST_SERVER_PORT} PORT=${TEST_SERVER_PORT} VITE_DEV_AUTH_AUTO_LOGIN=false npm run dev`,
     url: `http://localhost:${TEST_CLIENT_PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
