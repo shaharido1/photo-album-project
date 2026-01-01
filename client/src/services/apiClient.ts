@@ -7,6 +7,7 @@
 
 import { getIdToken } from './authService';
 import { API_ENDPOINTS, type ApiEndpoint } from '@photo-album/types';
+export { API_ENDPOINTS, type ApiEndpoint };
 
 /**
  * API response types
