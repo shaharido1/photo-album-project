@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { BACKEND_URL, waitForBackend } from './test-utils';
 
 test.describe('Initial Load & Layout', () => {
   test('should load the editor layout', async ({ page }) => {
@@ -31,8 +32,10 @@ test.describe('Initial Load & Layout', () => {
 
 test.describe('API Endpoints', () => {
   test('should have API health endpoint working', async ({ request }) => {
-    // Use relative path - goes through Vite proxy to backend
-    const response = await request.get('/api/health');
+    // Wait for backend to be ready
+    await waitForBackend(request);
+
+    const response = await request.get(`${BACKEND_URL}/api/health`);
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
@@ -41,8 +44,10 @@ test.describe('API Endpoints', () => {
   });
 
   test('should have API photos endpoint working', async ({ request }) => {
-    // Use relative path - goes through Vite proxy to backend
-    const response = await request.get('/api/photos');
+    // Wait for backend to be ready
+    await waitForBackend(request);
+
+    const response = await request.get(`${BACKEND_URL}/api/photos`);
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
