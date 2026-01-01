@@ -390,27 +390,13 @@ export function EditorCanvas(): JSX.Element {
     dispatch(selectSlot({ pageIndex: currentPageIndex, slotIndex }));
   };
 
-  // No album created yet
-  if (!albumId) {
+  // No pages yet in some edge case (though usually we have at least one)
+  if (albumId && !currentPage) {
     return (
       <div className="flex-1 bg-muted/50 flex items-center justify-center p-8">
-        <div
-          className="bg-background rounded-lg shadow-lg aspect-square w-full max-w-xl flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 hover:bg-accent/50 transition-colors"
-          onClick={() => setIsCreateDialogOpen(true)}
-          data-testid="empty-state-create-album"
-        >
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <ImagePlus className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <p className="text-muted-foreground mb-2">Create an album to start</p>
-          <p className="text-sm text-muted-foreground">
-            Click here or &quot;New Album&quot; in the header
-          </p>
+        <div className="text-center text-muted-foreground">
+          <p>This album has no pages yet.</p>
         </div>
-        <CreateAlbumDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-        />
       </div>
     );
   }

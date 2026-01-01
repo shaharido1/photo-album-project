@@ -119,30 +119,6 @@ export function BookView(): JSX.Element {
   const pageWidth = spreadInfo.isCover ? bookSize.width : bookSize.width / 2;
   const pageHeight = bookSize.height;
 
-  // No album created yet
-  if (!albumId) {
-    return (
-      <div className="flex-1 bg-muted/50 flex items-center justify-center p-8">
-        <div
-          className="bg-background rounded-lg shadow-lg aspect-square w-full max-w-xl flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 hover:bg-accent/50 transition-colors"
-          onClick={() => setIsCreateDialogOpen(true)}
-          data-testid="empty-state-create-album"
-        >
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <ImagePlus className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <p className="text-muted-foreground mb-2">Create an album to start</p>
-          <p className="text-sm text-muted-foreground">
-            Click here or &quot;New Album&quot; in the header
-          </p>
-        </div>
-        <CreateAlbumDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-        />
-      </div>
-    );
-  }
 
   // No pages yet
   if (pages.length === 0) {
@@ -203,9 +179,8 @@ export function BookView(): JSX.Element {
             {/* Cover view */}
             {spreadInfo.isCover && spreadInfo.leftPage && (
               <div
-                className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${
-                  flipDirection === 'next' ? 'animate-flip-out' : ''
-                }`}
+                className={`absolute inset-0 flex items-center justify-center transition-transform duration-500 ${flipDirection === 'next' ? 'animate-flip-out' : ''
+                  }`}
                 style={{
                   transformStyle: 'preserve-3d',
                   transformOrigin: 'right center',
@@ -226,9 +201,8 @@ export function BookView(): JSX.Element {
               <div className="absolute inset-0 flex">
                 {/* Left page */}
                 <div
-                  className={`relative transition-transform duration-500 ${
-                    flipDirection === 'prev' ? 'animate-flip-in-left' : ''
-                  }`}
+                  className={`relative transition-transform duration-500 ${flipDirection === 'prev' ? 'animate-flip-in-left' : ''
+                    }`}
                   style={{
                     transformStyle: 'preserve-3d',
                     transformOrigin: 'right center',
@@ -266,9 +240,8 @@ export function BookView(): JSX.Element {
 
                 {/* Right page */}
                 <div
-                  className={`relative transition-transform duration-500 ${
-                    flipDirection === 'next' ? 'animate-flip-out-right' : ''
-                  }`}
+                  className={`relative transition-transform duration-500 ${flipDirection === 'next' ? 'animate-flip-out-right' : ''
+                    }`}
                   style={{
                     transformStyle: 'preserve-3d',
                     transformOrigin: 'left center',
@@ -300,9 +273,8 @@ export function BookView(): JSX.Element {
             {/* Page flip animation overlay */}
             {isFlipping && (
               <div
-                className={`absolute inset-0 pointer-events-none ${
-                  flipDirection === 'next' ? 'page-flip-next' : 'page-flip-prev'
-                }`}
+                className={`absolute inset-0 pointer-events-none ${flipDirection === 'next' ? 'page-flip-next' : 'page-flip-prev'
+                  }`}
                 style={{
                   transformStyle: 'preserve-3d',
                 }}

@@ -7,6 +7,7 @@ import versionReducer from './features/version/versionSlice';
 import photosReducer from './features/photos/photosSlice';
 import albumReducer from './features/album/albumSlice';
 import authReducer from './features/auth/authSlice';
+import googlePhotosReducer from './features/googlePhotos/googlePhotosSlice';
 import App from './App';
 
 // Mock canvas for Konva
@@ -45,6 +46,7 @@ const createTestStore = (preloadedState) => {
       photos: photosReducer,
       album: albumReducer,
       auth: authReducer,
+      googlePhotos: googlePhotosReducer,
     },
     preloadedState,
   });
@@ -66,6 +68,28 @@ const defaultPhotosState = {
   uploadStatus: 'idle',
   uploadProgress: null,
   uploadError: null,
+};
+
+const defaultGooglePhotosState = {
+  isConnected: false,
+  connectedEmail: null,
+  connectedAt: null,
+  connectionStatus: 'idle',
+  connectionError: null,
+  albums: [],
+  albumsNextPageToken: null,
+  albumsStatus: 'idle',
+  albumsError: null,
+  photos: [],
+  photosNextPageToken: null,
+  photosStatus: 'idle',
+  photosError: null,
+  selectedAlbumId: null,
+  selectedPhotoIds: [],
+  importStatus: 'idle',
+  importError: null,
+  importProgress: null,
+  isDialogOpen: false,
 };
 
 describe('App', () => {
@@ -90,6 +114,7 @@ describe('App', () => {
         error: null,
       },
       auth: defaultAuthState,
+      googlePhotos: defaultGooglePhotosState,
     });
 
     render(
@@ -126,6 +151,7 @@ describe('App', () => {
         error: null,
       },
       auth: defaultAuthState,
+      googlePhotos: defaultGooglePhotosState,
     });
 
     render(
@@ -139,7 +165,7 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows empty state message when no album is created', () => {
+  it('shows landing page when no album is created', () => {
     const store = createTestStore({
       greeting: { message: '', status: 'idle', error: null },
       foo: { value: '', status: 'idle', error: null },
@@ -160,6 +186,7 @@ describe('App', () => {
         error: null,
       },
       auth: defaultAuthState,
+      googlePhotos: defaultGooglePhotosState,
     });
 
     render(
@@ -168,6 +195,6 @@ describe('App', () => {
       </Provider>
     );
 
-    expect(screen.getByText('Create an album to start')).toBeInTheDocument();
+    expect(screen.getByText('Memories worth keeping.')).toBeInTheDocument();
   });
 });
