@@ -4,6 +4,8 @@
  * This module is used by Jest's setupFilesAfterEnv to manage the server lifecycle.
  * We import from app.ts to get the Express app without starting a server.
  * Supertest works directly with the Express app.
+ *
+ * Note: Environment variables are set in setupEnv.ts which runs before this file.
  */
 
 import { jest, beforeAll, afterAll } from '@jest/globals';
