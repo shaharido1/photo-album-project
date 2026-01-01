@@ -27,7 +27,8 @@ describe('Feedback API', () => {
           .send({ description: 'Test description' });
 
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Title and description are required');
+        expect(response.body.error).toBe('Invalid request');
+        expect(response.body.details).toBeDefined();
       });
 
       it('should return 400 when description is missing', async () => {
@@ -37,7 +38,8 @@ describe('Feedback API', () => {
           .send({ title: 'Test Feedback' });
 
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Title and description are required');
+        expect(response.body.error).toBe('Invalid request');
+        expect(response.body.details).toBeDefined();
       });
 
       it('should return 400 when both title and description are missing', async () => {
@@ -47,7 +49,8 @@ describe('Feedback API', () => {
           .send({});
 
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe('Title and description are required');
+        expect(response.body.error).toBe('Invalid request');
+        expect(response.body.details).toBeDefined();
       });
 
       it('should return 400 with empty title', async () => {

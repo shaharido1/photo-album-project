@@ -3,6 +3,7 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@photo-album/types$': '<rootDir>/../shared/types/dist/index.js',
     '^@/config/firebase$': '<rootDir>/src/__mocks__/firebase-config.ts',
     '^@/services/apiClient$': '<rootDir>/src/__mocks__/apiClient.ts',
     '^@/services/authService$': '<rootDir>/src/__mocks__/authService.ts',

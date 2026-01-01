@@ -9,17 +9,16 @@ test.describe('Initial Load & Layout', () => {
     await expect(
       page.getByRole('heading', { name: 'Photo Album' })
     ).toBeVisible({ timeout: 10000 });
-    // Before album creation, app shows book view (empty state)
-    // Photo Library and Properties panels only show in edit mode after album creation
-    await expect(page.getByText('Create an album to start')).toBeVisible();
+    // Before album creation, app shows landing page with hero section
+    await expect(page.getByText('Memories worth keeping.')).toBeVisible();
   });
 
   test('should show empty state before creating album', async ({ page }) => {
     await page.goto('/');
 
-    // Check for empty state message
-    await expect(page.getByText('Create an album to start')).toBeVisible();
-    await expect(page.getByText('Create an album to see pages')).toBeVisible();
+    // Check for landing page content
+    await expect(page.getByText('Memories worth keeping.')).toBeVisible();
+    await expect(page.getByText('Create New Album')).toBeVisible();
   });
 
   test('should show "No album" text in header before album creation', async ({

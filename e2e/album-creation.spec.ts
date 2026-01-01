@@ -20,7 +20,9 @@ test.describe('Album Creation', () => {
 
     // Verify dialog appears
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Create New Album')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Create New Album' })
+    ).toBeVisible();
     await expect(page.getByLabel('Album Name')).toBeVisible();
   });
 
@@ -110,12 +112,14 @@ test.describe('Album Creation', () => {
   }) => {
     await page.goto('/');
 
-    // Click on the empty state area (the "Create an album to start" card)
-    await page.getByTestId('empty-state-create-album').click();
+    // Click on the "Create New Album" card in landing page
+    await page.getByText('Create New Album').first().click();
 
     // Verify dialog appears
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Create New Album')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Create New Album' })
+    ).toBeVisible();
   });
 
   test('should show checkmark on selected album size option', async ({

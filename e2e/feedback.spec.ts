@@ -304,7 +304,8 @@ test.describe('Feedback Feature', () => {
 
       expect(response.status()).toBe(400);
       const body = await response.json();
-      expect(body.error).toBe('Title and description are required');
+      expect(body.error).toBe('Invalid request');
+      expect(body.details).toBeDefined();
     });
 
     test('should return 400 when description is missing', async ({
@@ -323,7 +324,8 @@ test.describe('Feedback Feature', () => {
 
       expect(response.status()).toBe(400);
       const body = await response.json();
-      expect(body.error).toBe('Title and description are required');
+      expect(body.error).toBe('Invalid request');
+      expect(body.details).toBeDefined();
     });
 
     test('should accept valid feedback with test user header', async ({

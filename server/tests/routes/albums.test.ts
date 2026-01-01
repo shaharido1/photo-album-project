@@ -77,7 +77,7 @@ describe('Albums API', () => {
     it('should return 401 without authentication', async () => {
       const response = await request(app)
         .post('/api/albums')
-        .send({ name: 'Test Album', size: '8x10' });
+        .send({ name: 'Test Album', size: '8x8' });
 
       expect(response.status).toBe(401);
     });
@@ -85,7 +85,7 @@ describe('Albums API', () => {
     it('should create album with authentication', async () => {
       const albumData = {
         name: 'Test Album',
-        size: '8x10',
+        size: '8x8',
       };
 
       const response = await request(app)

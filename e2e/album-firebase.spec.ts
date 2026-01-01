@@ -10,6 +10,9 @@ import { BACKEND_URL, waitForBackend } from './test-utils';
 
 const TEST_USER_ID = 'e2e-album-firebase-test-user';
 
+// Run tests serially to avoid race conditions with Firebase state
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Album Firebase Integration', () => {
   // Clean up any test albums before and after tests
   test.beforeEach(async ({ request }) => {

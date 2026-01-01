@@ -24,7 +24,7 @@ describe('Authentication', () => {
       expect(response.status).toBe(200);
       expect(response.body.authenticated).toBe(true);
       expect(response.body.user).toBeDefined();
-      expect(response.body.user.uid).toBe(TEST_USER_ID);
+      expect(response.body.user.id).toBe(TEST_USER_ID);
     });
 
     it('should return different user for different test user ID', async () => {
@@ -33,7 +33,7 @@ describe('Authentication', () => {
         .set('X-Test-User-Id', TEST_USER_ID_2);
 
       expect(response.status).toBe(200);
-      expect(response.body.user.uid).toBe(TEST_USER_ID_2);
+      expect(response.body.user.id).toBe(TEST_USER_ID_2);
     });
 
     it('should return 401 with invalid Bearer token format', async () => {
@@ -75,7 +75,7 @@ describe('Authentication', () => {
         .set('X-Test-User-Id', TEST_USER_ID);
 
       expect(response.status).toBe(200);
-      expect(response.body.user.name).toBe('Test User');
+      expect(response.body.user.displayName).toBe('Test User');
     });
   });
 
