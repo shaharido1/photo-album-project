@@ -37,17 +37,52 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   // E2E test bypass (only in non-production)
-  if (process.env.NODE_ENV !== 'production' && req.headers['x-test-user-id']) {
-    req.user = {
-      uid: req.headers['x-test-user-id'] as string,
-      email: 'test@example.com',
-      name: 'Test User',
-    };
-    next();
-    return;
-  }
-
   const authHeader = req.headers.authorization;
+
+  if (process.env.NODE_ENV !== 'production' || process.env.VITE_DEV_AUTH_ENABLED === 'true') {
+    let mockUser: AuthUser | null = null;
+
+    // Check for X-Test-User-Id header
+    if (req.headers['x-test-user-id']) {
+      mockUser = {
+        uid: req.headers['x-test-user-id'] as string,
+        email: 'test@example.com',
+        name: 'Test User',
+      };
+    }
+    // Check for Bearer dev-token: prefix
+    else if (authHeader?.startsWith('Bearer dev-token:')) {
+      const uid = authHeader.substring(17);
+      mockUser = {
+        uid,
+        email: 'dev@example.com',
+        name: 'Dev User',
+      };
+    }
+
+    if (mockUser) {
+      req.user = mockUser;
+
+      // eslint-disable-next-line no-console
+      console.log(`[Dev Auth] Bypassing auth for user: ${mockUser.email} (${mockUser.uid})`);
+
+      // Ensure user exists in Firestore if available
+      try {
+        await userService.getOrCreate(
+          mockUser.uid,
+          mockUser.email,
+          mockUser.name
+        );
+      } catch (e) {
+        // Silently fail if Firebase is not fully configured - allowed in dev
+        // eslint-disable-next-line no-console
+        console.warn(`[Dev Auth] Could not ensure user ${mockUser.uid} in DB (expected if Firebase not configured):`, (e as Error).message);
+      }
+
+      next();
+      return;
+    }
+  }
 
   if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'No token provided' });
