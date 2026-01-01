@@ -12,6 +12,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import apiRoutes from './routes/api.js';
 import { initializeFirebase } from './config/firebase.js';
+import { storageService } from './services/storageService.js';
 
 // Initialize Firebase Admin SDK
 try {
@@ -33,6 +34,14 @@ app.use(express.json());
 app.get('/healthz', (_req: Request, res: Response): void => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve local storage files when USE_LOCAL_STORAGE is enabled
+const localStorageDir = storageService.getStorageDir();
+if (localStorageDir) {
+  // eslint-disable-next-line no-console
+  console.log('Local storage enabled, serving files from:', localStorageDir);
+  app.use('/api/storage', express.static(localStorageDir));
+}
 
 app.use('/api', apiRoutes);
 

@@ -4,7 +4,8 @@ export default {
   maxWorkers: 1,
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  // Setup file that manages server lifecycle (runs once before all test files)
+  // Setup files: setupEnv runs first to set env vars, then setup.ts imports modules
+  setupFiles: ['<rootDir>/tests/setupEnv.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {

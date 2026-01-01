@@ -1,10 +1,12 @@
 /**
  * Photo Upload E2E Integration Tests
  *
- * Tests the full photo upload flow with actual Firebase storage:
- * - Upload photo → verify stored in Firebase Storage and Firestore
+ * Tests the full photo upload flow with storage (local or Firebase based on config):
+ * - Upload photo → verify stored in Storage and Firestore
  * - Retrieve photo → verify data matches
  * - Delete photo → verify cleanup from both Storage and Firestore
+ *
+ * Note: Tests use USE_LOCAL_STORAGE=true by default (set in setup.ts)
  */
 
 import request from 'supertest';
@@ -75,9 +77,9 @@ describe('Photo Upload E2E Integration Tests', () => {
       expect(uploadResponse.body.photo.width).toBe(200);
       expect(uploadResponse.body.photo.height).toBe(150);
 
-      // Verify URLs are Firebase Storage URLs
-      expect(uploadResponse.body.photo.thumbnail).toContain('storage.googleapis.com');
-      expect(uploadResponse.body.photo.fullSize).toContain('storage.googleapis.com');
+      // Verify URLs are valid storage URLs (local or Firebase)
+      expect(uploadResponse.body.photo.thumbnail).toMatch(/localhost.*\/api\/storage\/|storage\.googleapis\.com/);
+      expect(uploadResponse.body.photo.fullSize).toMatch(/localhost.*\/api\/storage\/|storage\.googleapis\.com/);
 
       const photoId = uploadResponse.body.photo.id;
       createdPhotoIds.push(photoId);
@@ -145,12 +147,20 @@ describe('Photo Upload E2E Integration Tests', () => {
       const photoId = uploadResponse.body.photo.id;
       createdPhotoIds.push(photoId);
 
+      // Small delay to allow Firestore to be consistent
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // List photos and verify our photo is in the list
       const listResponse = await request(app)
         .get('/api/photos')
         .set('X-Test-User-Id', TEST_USER_ID);
 
       console.log('List response status:', listResponse.status);
+      console.log('Looking for photo ID:', photoId);
+      console.log(
+        'Photo IDs in list:',
+        listResponse.body.photos?.map((p: { id: string }) => p.id)
+      );
 
       expect(listResponse.status).toBe(200);
       expect(listResponse.body.photos).toBeDefined();
@@ -225,8 +235,8 @@ describe('Photo Upload E2E Integration Tests', () => {
       // Verify each photo has proper data
       for (const photo of uploadResponse.body.photos) {
         expect(photo.id).toBeDefined();
-        expect(photo.thumbnail).toContain('storage.googleapis.com');
-        expect(photo.fullSize).toContain('storage.googleapis.com');
+        expect(photo.thumbnail).toMatch(/localhost.*\/api\/storage\/|storage\.googleapis\.com/);
+        expect(photo.fullSize).toMatch(/localhost.*\/api\/storage\/|storage\.googleapis\.com/);
       }
     });
   });

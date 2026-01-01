@@ -46,20 +46,13 @@ router.get(PHOTOS_ROOT, async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // In non-production with test user header, return mock photos for E2E tests
-  if (process.env.NODE_ENV !== 'production' && hasTestHeader) {
-    const response: PhotosResponse = { photos: mockPhotos };
-    res.json(response);
-    return;
-  }
-
-  // Use auth middleware for Firebase mode
+  // Use auth middleware for Firebase mode (handles both real auth and test headers)
   authMiddleware(req as AuthenticatedRequest, res, async () => {
     try {
       const authReq = req as AuthenticatedRequest;
       const photos = await photoService.getAll(authReq.user!.uid);
-      // In development, if user has no photos, return mock photos for testing
-      if (process.env.NODE_ENV !== 'production' && photos.length === 0) {
+      // In development without test header, if user has no photos, return mock photos
+      if (process.env.NODE_ENV !== 'production' && !hasTestHeader && photos.length === 0) {
         const response: PhotosResponse = { photos: mockPhotos };
         res.json(response);
         return;

@@ -32,6 +32,9 @@ test-results/
 playwright-report/
 .playwright-mcp/
 
+# Local storage mock (for development/testing without Firebase Storage)
+firebase-storage-mock/
+
 # Docker
 .docker/
 
