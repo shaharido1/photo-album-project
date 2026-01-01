@@ -214,8 +214,9 @@ export function PhotoLibraryPanel(): JSX.Element {
 
   return (
     <div
+      data-testid="photo-library-panel"
       className={cn(
-        'w-64 border-r bg-muted/30 flex flex-col relative',
+        'flex flex-col h-full relative',
         isDraggingFiles && 'ring-2 ring-primary ring-inset'
       )}
       onDragOver={handleFileDragOver}

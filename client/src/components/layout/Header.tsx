@@ -3,12 +3,15 @@ import { Download, Save, Moon, Sun, Plus, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { selectAlbumName, selectAlbumId } from '@/features/album/albumSlice';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
-import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
 import { LoginButton } from '@/components/auth/LoginButton';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ViewModeToggle } from './ViewModeToggle';
 import { useAppSelector } from '@/app/hooks';
+
+interface HeaderProps {
+  onCreateAlbum?: () => void;
+}
 
 const getInitialDarkMode = (): boolean => {
   if (typeof window === 'undefined') return false;
@@ -19,9 +22,8 @@ const getInitialDarkMode = (): boolean => {
   return prefersDark;
 };
 
-export function Header(): JSX.Element {
+export function Header({ onCreateAlbum }: HeaderProps): JSX.Element {
   const [isDark, setIsDark] = useState(getInitialDarkMode);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
 
   const albumId = useAppSelector(selectAlbumId);
@@ -50,7 +52,7 @@ export function Header(): JSX.Element {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setIsCreateDialogOpen(true)}
+          onClick={onCreateAlbum}
         >
           <Plus className="h-4 w-4 mr-2" />
           New Album
@@ -94,11 +96,6 @@ export function Header(): JSX.Element {
         {/* Auth: Show login button or user menu */}
         {isAuthenticated ? <UserMenu /> : <LoginButton />}
       </div>
-
-      <CreateAlbumDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-      />
 
       <FeedbackDialog
         open={isFeedbackDialogOpen}

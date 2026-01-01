@@ -26,9 +26,15 @@ photo-album-project/
 │   │   ├── app/
 │   │   │   └── store.ts        # Redux store configuration
 │   │   ├── components/         # Reusable UI components
+│   │   │   ├── album/          # Album-related components (CreateAlbumDialog)
 │   │   │   ├── auth/           # Authentication components
-│   │   │   ├── layout/         # Header, Footer, etc.
-│   │   │   └── ui/             # Generic UI components
+│   │   │   ├── layout/         # Layout components
+│   │   │   │   ├── EditorLayout.tsx    # Main editor layout
+│   │   │   │   ├── Header.tsx          # App header
+│   │   │   │   ├── LeftSidebar.tsx     # Photos/Albums sidebar
+│   │   │   │   ├── PhotoLibraryPanel.tsx # Photo library view
+│   │   │   │   └── MyAlbumsPanel.tsx   # User's albums list
+│   │   │   └── ui/             # Generic UI components (shadcn/ui)
 │   │   ├── features/           # Feature-based modules
 │   │   │   ├── auth/           # Auth slice and logic
 │   │   │   └── albums/         # Album management
@@ -132,15 +138,34 @@ photo-album-project/
 {
   auth: {
     user: User | null,
-    isAuthenticated: boolean,
+    token: string | null,
+    status: 'idle' | 'loading' | 'succeeded' | 'failed',
+    error: string | null,
+    isInitialized: boolean
+  },
+  album: {
+    album: Album,                    // Current album being edited
+    albums: AlbumSummary[],          // List of user's albums (for My Albums panel)
+    albumsStatus: 'idle' | 'loading' | 'succeeded' | 'failed',
+    selectedSlot: SelectedSlotRef | null,
+    viewMode: 'book' | 'edit',
+    currentSpread: number,
     status: 'idle' | 'loading' | 'succeeded' | 'failed',
     error: string | null
   },
-  albums: {
-    items: Album[],
-    currentAlbum: Album | null,
+  photos: {
+    items: Photo[],
+    selectedIds: string[],
     status: 'idle' | 'loading' | 'succeeded' | 'failed',
-    error: string | null
+    error: string | null,
+    uploadStatus: 'idle' | 'loading' | 'succeeded' | 'failed',
+    uploadProgress: number | null,
+    uploadError: string | null
+  },
+  googlePhotos: {
+    albums: GoogleAlbum[],
+    photos: GooglePhoto[],
+    // ... import state
   }
 }
 ```
