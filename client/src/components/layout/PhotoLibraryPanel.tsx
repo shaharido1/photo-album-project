@@ -187,13 +187,14 @@ export function PhotoLibraryPanel(): JSX.Element {
 
   const handleDragStart = (
     e: DragEvent<HTMLDivElement>,
-    photoId: string
+    photo: any
   ): void => {
-    e.dataTransfer.setData('photoId', photoId);
+    e.dataTransfer.setData('photoId', photo.id);
+    e.dataTransfer.setData('photoUrl', photo.fullSize || photo.thumbnail);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleDoubleClick = (photoId: string): void => {
+  const handleDoubleClick = (photo: any): void => {
     if (!albumId || !currentPage) return;
 
     // Find first empty slot
@@ -203,7 +204,8 @@ export function PhotoLibraryPanel(): JSX.Element {
         assignPhotoToSlot({
           pageIndex: currentPageIndex,
           slotIndex: emptySlotIndex,
-          photoId,
+          photoId: photo.id,
+          photoUrl: photo.fullSize || photo.thumbnail,
         })
       );
       dispatch(
@@ -401,9 +403,9 @@ export function PhotoLibraryPanel(): JSX.Element {
                   <div
                     key={photo.id}
                     draggable={!!albumId}
-                    onDragStart={(e) => handleDragStart(e, photo.id)}
+                    onDragStart={(e) => handleDragStart(e, photo)}
                     onClick={() => handlePhotoClick(photo.id)}
-                    onDoubleClick={() => handleDoubleClick(photo.id)}
+                    onDoubleClick={() => handleDoubleClick(photo)}
                     className={cn(
                       'relative aspect-square rounded-md bg-muted overflow-hidden cursor-pointer transition-all group',
                       isSelected

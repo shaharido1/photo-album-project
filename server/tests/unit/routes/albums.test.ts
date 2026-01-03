@@ -7,6 +7,7 @@
 
 import request from 'supertest';
 import { getApp, TEST_USER_ID } from '../setup.js';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import type { Express } from 'express';
 
 describe('Albums API', () => {
@@ -125,6 +126,52 @@ describe('Albums API', () => {
         .send({ name: 'Updated Album' });
 
       expect(response.status).toBe(404);
+    });
+  });
+
+  describe('PUT /api/albums/:id/full', () => {
+    it('should return 401 without authentication', async () => {
+      const response = await request(app)
+        .put('/api/albums/some-album-id/full')
+        .send({ name: 'Updated Album' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 400 for invalid data', async () => {
+      const response = await request(app)
+        .put('/api/albums/some-album-id/full')
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({ pages: 'not-an-array' });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should return 200 for valid bulk update', async () => {
+      // Create album first to get a valid ID
+      const createResponse = await request(app)
+        .post('/api/albums')
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({ name: 'Bulk Test Base', size: '10x10' });
+
+      expect(createResponse.status).toBe(201);
+      const albumId = createResponse.body.album.id;
+
+      const response = await request(app)
+        .put(`/api/albums/${albumId}/full`)
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({
+          name: 'Bulk Updated Album',
+          pages: [
+            {
+              layoutId: 'single',
+              background: '#ffffff',
+              slots: [],
+            },
+          ],
+        });
+
+      expect(response.status).toBe(200);
     });
   });
 

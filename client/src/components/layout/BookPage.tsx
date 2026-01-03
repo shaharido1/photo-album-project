@@ -39,11 +39,13 @@ function PhotoSlotDisplay({
 
   // Calculate image display dimensions with aspect ratio fit
   const calculateImageStyle = (): React.CSSProperties => {
-    if (!photo || !imageLoaded) {
+    const url = photo?.fullSize || photo?.thumbnail || slot.photoUrl;
+    if (!url || !imageLoaded) {
       return {};
     }
 
-    const imgAspect = photo.width / photo.height;
+    // Use photo dimensions if available, otherwise assume 1:1 or use image natural dimensions if we had them
+    const imgAspect = photo ? photo.width / photo.height : 1;
     const slotAspect = slotWidth / slotHeight;
 
     let imageWidth: number;
@@ -72,12 +74,13 @@ function PhotoSlotDisplay({
   };
 
   useEffect(() => {
-    if (photo) {
+    const url = photo?.fullSize || photo?.thumbnail || slot.photoUrl;
+    if (url) {
       const img = new Image();
       img.onload = () => setImageLoaded(true);
-      img.src = photo.fullSize || photo.thumbnail;
+      img.src = url;
     }
-  }, [photo]);
+  }, [photo, slot.photoUrl]);
 
   return (
     <div
@@ -91,9 +94,9 @@ function PhotoSlotDisplay({
         border: photo ? 'none' : '1px dashed #d1d5db',
       }}
     >
-      {photo && (
+      {(photo || slot.photoUrl) && (
         <img
-          src={photo.fullSize || photo.thumbnail}
+          src={photo?.fullSize || photo?.thumbnail || slot.photoUrl || ''}
           alt=""
           className="absolute top-0 left-0"
           style={calculateImageStyle()}
@@ -159,9 +162,8 @@ export function BookPage({
 
       {/* Page number */}
       <div
-        className={`absolute bottom-2 text-xs text-muted-foreground ${
-          position === 'left' ? 'left-2' : 'right-2'
-        }`}
+        className={`absolute bottom-2 text-xs text-muted-foreground ${position === 'left' ? 'left-2' : 'right-2'
+          }`}
       >
         {pageIndex + 1}
       </div>

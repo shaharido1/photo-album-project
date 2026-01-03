@@ -108,7 +108,7 @@ function PhotoSlot({
   const dispatch = useAppDispatch();
   const shapeRef = useRef<Konva.Image>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const [image] = useImage(photo?.fullSize || photo?.thumbnail);
+  const [image] = useImage(photo?.fullSize || photo?.thumbnail || slot.photoUrl || undefined);
 
   // Get filter string for this slot
   const filterString = slot.filters
@@ -332,6 +332,7 @@ export function EditorCanvas(): JSX.Element {
     (e: DragEvent<HTMLDivElement>): void => {
       e.preventDefault();
       const photoId = e.dataTransfer.getData('photoId');
+      const photoUrl = e.dataTransfer.getData('photoUrl');
       if (!photoId || !currentPage || !layout) return;
 
       // Get drop position relative to the container
@@ -379,6 +380,7 @@ export function EditorCanvas(): JSX.Element {
             pageIndex: currentPageIndex,
             slotIndex: targetSlotIndex,
             photoId,
+            photoUrl,
           })
         );
         dispatch(

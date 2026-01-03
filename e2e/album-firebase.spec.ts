@@ -228,4 +228,73 @@ test.describe('Album Firebase Integration', () => {
 
     expect(getResponse.status()).toBe(404);
   });
+
+  test('should bulk save album and pages via full update API', async ({
+    request,
+  }) => {
+    const albumName = `Bulk Save Album ${Date.now()}`;
+
+    // Create album
+    const createResponse = await request.post(`${BACKEND_URL}/api/albums`, {
+      headers: {
+        'X-Test-User-Id': TEST_USER_ID,
+        'Content-Type': 'application/json',
+      },
+      data: { name: albumName, size: '10x10' },
+    });
+
+    const createData = await createResponse.json();
+    const albumId = createData.album.id;
+
+    // Bulk update with pages
+    const fullData = {
+      name: albumName + ' Updated',
+      pages: [
+        {
+          layoutId: 'single',
+          background: '#ff0000',
+          slots: [
+            {
+              id: 'slot-1',
+              photoId: 'photo-1',
+              photoUrl: 'http://example.com/p1.jpg',
+              position: { x: 10, y: 10 },
+              scale: 1,
+              rotation: 0,
+            },
+          ],
+        },
+      ],
+    };
+
+    const fullUpdateResponse = await request.put(
+      `${BACKEND_URL}/api/albums/${albumId}/full`,
+      {
+        headers: {
+          'X-Test-User-Id': TEST_USER_ID,
+          'Content-Type': 'application/json',
+        },
+        data: fullData,
+      }
+    );
+
+    expect(fullUpdateResponse.status()).toBe(200);
+
+    // Verify update persisted
+    const getResponse = await request.get(
+      `${BACKEND_URL}/api/albums/${albumId}`,
+      {
+        headers: { 'X-Test-User-Id': TEST_USER_ID },
+      }
+    );
+
+    expect(getResponse.status()).toBe(200);
+    const getData = await getResponse.json();
+    expect(getData.album.name).toBe(fullData.name);
+    expect(getData.album.pages.length).toBe(1);
+    expect(getData.album.pages[0].background).toBe('#ff0000');
+    expect(getData.album.pages[0].slots[0].photoUrl).toBe(
+      'http://example.com/p1.jpg'
+    );
+  });
 });

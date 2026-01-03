@@ -325,6 +325,24 @@ describe('albumSlice', () => {
       expect(newState.album.pages[0].slots[0].photoId).toBe('photo-1');
     });
 
+    it('should assign photo and url to slot', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        assignPhotoToSlot({
+          pageIndex: 0,
+          slotIndex: 0,
+          photoId: 'photo-1',
+          photoUrl: 'http://example.com/photo.jpg',
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].photoId).toBe('photo-1');
+      expect(newState.album.pages[0].slots[0].photoUrl).toBe(
+        'http://example.com/photo.jpg'
+      );
+    });
+
     it('should not modify slot if page index is invalid', () => {
       const stateWithPages = createStateWithPages(1);
       const newState = albumReducer(

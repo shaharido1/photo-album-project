@@ -209,31 +209,22 @@ export const saveAlbum = createAsyncThunk<
       return rejectWithValue('Cannot save album without ID');
     }
 
-    // Update album metadata
+    // Bulk update album and pages
     await api.put(
-      `${API_ENDPOINTS.ALBUMS}/${album.id}`,
+      `${API_ENDPOINTS.ALBUMS}/${album.id}/full`,
       {
         name: album.name,
         size: album.size,
         currentPageIndex: album.currentPageIndex,
+        pages: album.pages.map(page => ({
+          id: page.id,
+          layoutId: page.layoutId,
+          background: page.background,
+          slots: page.slots,
+        })),
       },
       { authenticated: true }
     );
-
-    // Save each page
-    for (let i = 0; i < album.pages.length; i++) {
-      const page = album.pages[i];
-      await api.put(
-        `${API_ENDPOINTS.ALBUMS}/${album.id}/pages/${page.id}`,
-        {
-          layoutId: page.layoutId,
-          background: page.background,
-          order: i,
-          slots: page.slots,
-        },
-        { authenticated: true }
-      );
-    }
   } catch (error) {
     return rejectWithValue(
       error instanceof Error ? error.message : 'Failed to save album'
@@ -366,10 +357,11 @@ const albumSlice = createSlice({
     },
 
     assignPhotoToSlot: (state, action: PayloadAction<AssignPhotoToSlotPayload>) => {
-      const { pageIndex, slotIndex, photoId } = action.payload;
+      const { pageIndex, slotIndex, photoId, photoUrl } = action.payload;
       const page = state.album.pages[pageIndex];
       if (page && page.slots[slotIndex]) {
         page.slots[slotIndex].photoId = photoId;
+        page.slots[slotIndex].photoUrl = photoUrl;
       }
     },
 

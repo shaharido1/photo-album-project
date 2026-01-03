@@ -11,8 +11,10 @@ import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { HomePage } from '@/pages/HomePage';
 import { Dashboard } from '@/features/album/Dashboard';
 import { useAppSelector } from '@/app/hooks';
+import { useAutoSave } from '@/features/album/useAutoSave';
 
 export function EditorLayout(): JSX.Element {
+  useAutoSave();
   const viewMode = useAppSelector(selectViewMode);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

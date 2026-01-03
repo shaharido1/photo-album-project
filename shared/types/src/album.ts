@@ -309,6 +309,7 @@ export const FILTER_PRESETS: FilterPreset[] = [
 export const PageSlotSchema = z.object({
   id: z.string().min(1),
   photoId: z.string().nullable(),
+  photoUrl: z.string().nullable().optional(),
   position: PositionSchema,
   scale: z.number().positive(),
   rotation: z.number(),
@@ -348,6 +349,23 @@ export const AlbumSchema = z.object({
   pages: z.array(AlbumPageSchema),
   currentPageIndex: z.number().int().min(0),
 });
+
+/**
+ * Full album data including all pages for bulk saving
+ */
+export const FullAlbumUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  size: AlbumSizeKeySchema.optional(),
+  currentPageIndex: z.number().int().min(0).optional(),
+  pages: z.array(z.object({
+    id: z.string().optional(),
+    layoutId: z.string().min(1),
+    background: z.string(),
+    slots: z.array(PageSlotSchema),
+  })).optional(),
+});
+
+export type FullAlbumUpdate = z.infer<typeof FullAlbumUpdateSchema>;
 
 export type Album = z.infer<typeof AlbumSchema>;
 
@@ -498,6 +516,7 @@ export const AssignPhotoToSlotPayloadSchema = z.object({
   pageIndex: z.number().int().min(0),
   slotIndex: z.number().int().min(0),
   photoId: z.string().nullable(),
+  photoUrl: z.string().nullable().optional(),
 });
 
 export type AssignPhotoToSlotPayload = z.infer<typeof AssignPhotoToSlotPayloadSchema>;
@@ -545,7 +564,10 @@ export function firestorePageToApi(page: FirestoreAlbumPage): AlbumPage {
     id: page.id ?? '',
     layoutId: page.layoutId,
     background: page.background,
-    slots: page.slots,
+    slots: page.slots.map(slot => ({
+      ...slot,
+      photoUrl: slot.photoUrl ?? null
+    })),
   };
 }
 

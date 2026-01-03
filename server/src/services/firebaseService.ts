@@ -402,6 +402,77 @@ export const albumService = {
   },
 
   /**
+   * Update an album and all its pages in a single batch
+   */
+  async updateFull(
+    albumId: string,
+    userId: string,
+    updates: {
+      name?: string;
+      size?: string;
+      currentPageIndex?: number;
+      pages?: Array<{
+        id?: string;
+        layoutId: string;
+        background: string;
+        slots: any[];
+      }>;
+    }
+  ): Promise<boolean> {
+    const albumRef = db().collection('albums').doc(albumId);
+    const doc = await albumRef.get();
+
+    if (!doc.exists) {
+      return false;
+    }
+
+    const data = doc.data() as FirestoreAlbum;
+
+    // Verify ownership
+    if (data.userId !== userId) {
+      return false;
+    }
+
+    const batch = db().batch();
+    const now = Timestamp.now();
+
+    // Update album metadata
+    const albumUpdates: Record<string, any> = {
+      updatedAt: now,
+    };
+    if (updates.name !== undefined) albumUpdates.name = updates.name;
+    if (updates.size !== undefined) albumUpdates.size = updates.size;
+    if (updates.currentPageIndex !== undefined)
+      albumUpdates.currentPageIndex = updates.currentPageIndex;
+
+    batch.update(albumRef, albumUpdates);
+
+    // Update pages if provided
+    if (updates.pages) {
+      const pagesCollection = albumRef.collection('pages');
+
+      updates.pages.forEach((page, index) => {
+        const pageData = {
+          layoutId: page.layoutId,
+          background: page.background,
+          order: index,
+          slots: page.slots,
+        };
+
+        if (page.id) {
+          batch.set(pagesCollection.doc(page.id), pageData, { merge: true });
+        } else {
+          // If no ID, it's a new page
+          batch.set(pagesCollection.doc(), pageData);
+        }
+      });
+    }
+
+    await batch.commit();
+    return true;
+  },
+
+  /**
    * Delete a page from an album
    */
   async deletePage(

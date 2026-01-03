@@ -123,6 +123,39 @@ router.put(
   }
 );
 
+router.put(
+  '/:id/full',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      // Use the new FullAlbumUpdateSchema for validation
+      const { FullAlbumUpdateSchema } = await import('@photo-album/types');
+      const parseResult = FullAlbumUpdateSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        res.status(400).json({ error: 'Invalid album data', details: parseResult.error.errors });
+        return;
+      }
+
+      const success = await albumService.updateFull(
+        req.params.id,
+        req.user!.uid,
+        parseResult.data as any
+      );
+
+      if (!success) {
+        res.status(404).json({ error: 'Album not found' });
+        return;
+      }
+      res.json({ success: true });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error in bulk update:', error);
+      res.status(500).json({ error: 'Failed to update album' });
+    }
+  }
+);
+
 router.delete(
   ALBUM_BY_ID,
   authMiddleware,

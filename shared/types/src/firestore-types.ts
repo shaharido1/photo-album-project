@@ -64,6 +64,7 @@ export interface FirestoreUser {
 export interface FirestorePageSlot {
   id: string;
   photoId: string | null;
+  photoUrl?: string | null;
   position: { x: number; y: number };
   scale: number;
   rotation: number;
