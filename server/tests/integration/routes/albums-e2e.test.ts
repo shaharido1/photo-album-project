@@ -9,6 +9,7 @@
 
 import request from 'supertest';
 import { app, TEST_USER_ID } from '../setup.js';
+// Integration tests use real Firebase - expect slower execution
 
 // Generate unique test IDs to avoid conflicts
 const generateTestId = () =>

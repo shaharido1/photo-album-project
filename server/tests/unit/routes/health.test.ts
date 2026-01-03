@@ -1,13 +1,20 @@
 /**
- * Health Check Endpoint Tests
+ * Health Check Endpoint Unit Tests
  *
- * Tests for /healthz and /api/health endpoints
+ * Tests for /healthz and /api/health endpoints - no external dependencies
  */
 
 import request from 'supertest';
-import { app } from '../setup.js';
+import { getApp } from '../setup.js';
+import type { Express } from 'express';
 
 describe('Health Check', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getApp();
+  });
+
   describe('GET /healthz', () => {
     it('should return health status for container orchestration', async () => {
       const response = await request(app).get('/healthz');

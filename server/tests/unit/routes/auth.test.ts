@@ -1,13 +1,21 @@
 /**
- * Authentication Routes Tests
+ * Authentication Unit Tests
  *
  * Tests for /api/auth endpoints and authentication middleware
+ * Uses mocked Firebase - tests auth logic without network calls
  */
 
 import request from 'supertest';
-import { app, TEST_USER_ID, TEST_USER_ID_2 } from '../setup.js';
+import { getApp, TEST_USER_ID, TEST_USER_ID_2 } from '../setup.js';
+import type { Express } from 'express';
 
 describe('Authentication', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getApp();
+  });
+
   describe('GET /api/auth/verify', () => {
     it('should return 401 without authentication', async () => {
       const response = await request(app).get('/api/auth/verify');
@@ -91,8 +99,36 @@ describe('Authentication', () => {
         .get('/api/albums')
         .set('X-Test-User-Id', TEST_USER_ID);
 
-      // Should pass auth, may fail on Firebase
-      expect([200, 500]).toContain(response.status);
+      // Should pass auth - returns 200 with mocked empty array
+      expect(response.status).toBe(200);
+    });
+
+    it('should protect photo routes', async () => {
+      const response = await request(app).get('/api/photos/some-id');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should protect album creation', async () => {
+      const response = await request(app)
+        .post('/api/albums')
+        .send({ name: 'Test', size: '8x8' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should protect photo upload', async () => {
+      const response = await request(app).post('/api/photos/upload');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should protect feedback submission', async () => {
+      const response = await request(app)
+        .post('/api/feedback')
+        .send({ title: 'Test', description: 'Test' });
+
+      expect(response.status).toBe(401);
     });
   });
 });

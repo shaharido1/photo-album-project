@@ -1,13 +1,21 @@
 /**
- * Feedback API Routes Tests
+ * Feedback API Unit Tests
  *
- * Tests for /api/feedback endpoint that creates GitHub issues
+ * Tests for /api/feedback endpoint - validation only
+ * No actual GitHub API calls
  */
 
 import request from 'supertest';
-import { app, TEST_USER_ID } from '../setup.js';
+import { getApp, TEST_USER_ID } from '../setup.js';
+import type { Express } from 'express';
 
 describe('Feedback API', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getApp();
+  });
+
   describe('POST /api/feedback', () => {
     describe('Authentication', () => {
       it('should return 401 without authentication', async () => {
@@ -111,52 +119,6 @@ describe('Feedback API', () => {
           });
 
         expect([201, 500]).toContain(response.status);
-      });
-
-      it('should default to general when feedbackType is not provided', async () => {
-        const response = await request(app)
-          .post('/api/feedback')
-          .set('X-Test-User-Id', TEST_USER_ID)
-          .send({
-            title: 'No Type Specified',
-            description: 'Test description',
-          });
-
-        expect([201, 500]).toContain(response.status);
-      });
-    });
-
-    describe('Successful Submission', () => {
-      it('should handle feedback submission with valid data', async () => {
-        const response = await request(app)
-          .post('/api/feedback')
-          .set('X-Test-User-Id', TEST_USER_ID)
-          .send({
-            title: 'Test Feedback',
-            description: 'Test description',
-            feedbackType: 'general',
-          });
-
-        // Either success (201) or service not configured (500) are valid responses
-        expect([201, 500]).toContain(response.status);
-      });
-
-      it('should return issue info on successful submission', async () => {
-        const response = await request(app)
-          .post('/api/feedback')
-          .set('X-Test-User-Id', TEST_USER_ID)
-          .send({
-            title: 'Test with Issue Response',
-            description: 'Test description for issue response',
-            feedbackType: 'general',
-          });
-
-        if (response.status === 201) {
-          expect(response.body.success).toBe(true);
-          expect(response.body.issue).toBeDefined();
-          expect(response.body.issue.number).toBeDefined();
-          expect(response.body.issue.url).toBeDefined();
-        }
       });
     });
   });

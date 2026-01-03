@@ -1,22 +1,18 @@
 /**
- * Shared test setup and utilities
+ * Integration Test Setup - Real Firebase Connections
  *
- * This module is used by Jest's setupFilesAfterEnv to manage the server lifecycle.
- * We import from app.ts to get the Express app without starting a server.
- * Supertest works directly with the Express app.
- *
- * Note: Environment variables are set in setupEnv.ts which runs before this file.
+ * This setup uses actual Firebase for full E2E integration tests.
+ * Tests verify complete flows with real database operations.
  */
 
 import { jest, beforeAll, afterAll } from '@jest/globals';
-import { app } from '../src/app.js';
+import { app } from '../../src/app.js';
 
 // Test user ID headers for E2E test bypass (non-production only)
 export const TEST_USER_ID = 'test-user-123';
 export const TEST_USER_ID_2 = 'test-user-456';
 
 // Silence expected console errors during tests
-// These are testing error paths and the errors are expected behavior
 beforeAll(() => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
 });

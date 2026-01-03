@@ -1,13 +1,20 @@
 /**
- * Public Routes Tests
+ * Public Routes Unit Tests
  *
  * Tests for public API endpoints that don't require authentication
  */
 
 import request from 'supertest';
-import { app } from '../setup.js';
+import { getApp } from '../setup.js';
+import type { Express } from 'express';
 
 describe('Public API Routes', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getApp();
+  });
+
   describe('GET /api/hello', () => {
     it('should return Hello World message', async () => {
       const response = await request(app).get('/api/hello');
@@ -57,7 +64,6 @@ describe('Public API Routes', () => {
     it('should return semantic version format', async () => {
       const response = await request(app).get('/api/version');
 
-      // Semantic version: major.minor.patch
       const parts = response.body.version.split('.');
       expect(parts.length).toBeGreaterThanOrEqual(3);
       expect(parseInt(parts[0])).toBeGreaterThanOrEqual(0);
@@ -76,7 +82,6 @@ describe('Public API Routes', () => {
     it('should handle non-existent API routes', async () => {
       const response = await request(app).get('/api/non-existent-route');
 
-      // Express returns 404 or serves client for catch-all
       expect([404, 200]).toContain(response.status);
     });
 

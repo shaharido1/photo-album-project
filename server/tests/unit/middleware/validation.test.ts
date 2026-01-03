@@ -1,13 +1,21 @@
 /**
- * Request Validation and Middleware Tests
+ * Request Validation and Middleware Unit Tests
  *
  * Tests for JSON parsing, CORS, and error handling
+ * No external dependencies
  */
 
 import request from 'supertest';
-import { app, TEST_USER_ID } from '../setup.js';
+import { getApp, TEST_USER_ID } from '../setup.js';
+import type { Express } from 'express';
 
 describe('Request Validation', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getApp();
+  });
+
   describe('JSON body parsing', () => {
     it('should accept valid JSON', async () => {
       const response = await request(app)
@@ -43,7 +51,6 @@ describe('Request Validation', () => {
           },
         });
 
-      // Should not fail on JSON parsing
       expect([201, 401, 500]).toContain(response.status);
     });
 
@@ -116,7 +123,6 @@ describe('Request Validation', () => {
         .set('Content-Type', 'application/json')
         .send({ title: 'Test', description: 'Description' });
 
-      // Should process request regardless of GitHub config
       expect([201, 400, 500]).toContain(response.status);
     });
 
@@ -133,13 +139,18 @@ describe('Request Validation', () => {
 });
 
 describe('Error Handling', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    app = await getApp();
+  });
+
   describe('Method not allowed', () => {
     it('should handle PUT on hello endpoint', async () => {
       const response = await request(app)
         .put('/api/hello')
         .send({ message: 'test' });
 
-      // Express doesn't automatically return 405, so it may return 404 or other
       expect([404, 200]).toContain(response.status);
     });
 
@@ -175,7 +186,7 @@ describe('Error Handling', () => {
         .set('X-Test-User-Id', TEST_USER_ID)
         .send({
           title: 'Normal Request',
-          description: 'A'.repeat(1000), // 1KB description
+          description: 'A'.repeat(1000),
         });
 
       expect([201, 400, 500]).toContain(response.status);
