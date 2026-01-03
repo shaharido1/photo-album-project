@@ -4,6 +4,7 @@
  * Displays user avatar and dropdown menu with profile info and sign out
  */
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,12 +21,14 @@ import {
   selectUser,
   selectAuthStatus,
 } from '@/features/auth/authSlice';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
+import { SettingsDialog } from '@/components/settings/SettingsDialog';
 
 export function UserMenu(): JSX.Element | null {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const status = useAppSelector(selectAuthStatus);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (!user) {
     return null;
@@ -33,6 +36,10 @@ export function UserMenu(): JSX.Element | null {
 
   const handleSignOut = (): void => {
     dispatch(signOut());
+  };
+
+  const handleSettingsClick = (): void => {
+    setSettingsOpen(true);
   };
 
   const initials = user.displayName
@@ -77,12 +84,19 @@ export function UserMenu(): JSX.Element | null {
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSettingsClick}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} disabled={isLoading}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>{isLoading ? 'Signing out...' : 'Sign out'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      {/* Settings Dialog */}
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </DropdownMenu>
   );
 }

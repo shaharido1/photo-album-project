@@ -6,6 +6,7 @@ import photosReducer from '../features/photos/photosSlice';
 import albumReducer from '../features/album/albumSlice';
 import authReducer from '../features/auth/authSlice';
 import googlePhotosReducer from '../features/googlePhotos/googlePhotosSlice';
+import settingsReducer from '../features/settings/settingsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     album: albumReducer,
     auth: authReducer,
     googlePhotos: googlePhotosReducer,
+    settings: settingsReducer,
   },
 });
 

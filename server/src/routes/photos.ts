@@ -3,12 +3,14 @@ import { mockPhotos } from '../mock/photos.js';
 import { isFirebaseInitialized } from '../config/firebase.js';
 import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.js';
 import { uploadSingle, uploadMultiple } from '../middleware/upload.js';
-import { photoService } from '../services/firebaseService.js';
+import { photoService, settingsService } from '../services/firebaseService.js';
 import { storageService, type StorageFile } from '../services/storageService.js';
+import { imageAnalysisService } from '../services/imageAnalysis/index.js';
 import {
   API_ENDPOINTS,
   type PhotosResponse,
   type PhotoResponse,
+  type Photo,
   PhotoSchema,
 } from '@photo-album/types';
 
@@ -25,6 +27,50 @@ const PHOTO_UPLOAD_BATCH = '/upload/batch';
 interface UploadRequest extends AuthenticatedRequest {
   file?: Express.Multer.File;
   files?: Express.Multer.File[];
+}
+
+/**
+ * Process auto-tagging for a photo if enabled
+ * Runs in the background and doesn't block the upload response
+ */
+async function processAutoTagging(
+  userId: string,
+  photoId: string,
+  imageBuffer: Buffer
+): Promise<void> {
+  try {
+    // Check if auto-tagging is enabled for this user
+    const settings = await settingsService.get(userId);
+    if (!settings.autoImageTagging) {
+      return;
+    }
+
+    // Check if image analysis service is available
+    const isAvailable = await imageAnalysisService.isAvailable();
+    if (!isAvailable) {
+      // eslint-disable-next-line no-console
+      console.log('Image analysis service not available, skipping auto-tagging');
+      return;
+    }
+
+    // Analyze the image
+    const analysis = await imageAnalysisService.analyzeImage(imageBuffer);
+
+    // Update photo with AI data
+    await photoService.updateAiData(photoId, userId, {
+      caption: analysis.caption,
+      tags: analysis.tags,
+      aiProcessed: true,
+      aiProvider: analysis.provider,
+    });
+
+    // eslint-disable-next-line no-console
+    console.log(`Auto-tagged photo ${photoId}: ${analysis.tags.length} tags, provider: ${analysis.provider}`);
+  } catch (error) {
+    // Don't fail the upload if auto-tagging fails
+    // eslint-disable-next-line no-console
+    console.error('Auto-tagging failed for photo:', photoId, error);
+  }
 }
 
 router.get(PHOTOS_ROOT, async (req: Request, res: Response): Promise<void> => {
@@ -170,6 +216,11 @@ router.post(
         height: uploadResult.height,
       });
 
+      // Trigger auto-tagging in the background (don't await)
+      processAutoTagging(userId, photo.id, uploadReq.file!.buffer).catch(() => {
+        // Error already logged in processAutoTagging
+      });
+
       const response: PhotoResponse = { photo };
       res.status(201).json(response);
     } catch (error) {
@@ -220,22 +271,34 @@ router.post(
 
           const photoName = file.originalname.replace(/\.[^/.]+$/, '');
 
-          return photoService.create(userId, {
+          const photo = await photoService.create(userId, {
             name: photoName,
             thumbnail: uploadResult.thumbnailUrl,
             fullSize: uploadResult.fullSizeUrl,
             width: uploadResult.width,
             height: uploadResult.height,
           });
+
+          // Return both photo and buffer for auto-tagging
+          return { photo, buffer: file.buffer };
         })
       );
 
-      const photos = results
+      const successResults = results
         .filter(
-          (result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof photoService.create>>> =>
+          (result): result is PromiseFulfilledResult<{ photo: Photo; buffer: Buffer }> =>
             result.status === 'fulfilled'
         )
         .map((result) => result.value);
+
+      const photos = successResults.map((r) => r.photo);
+
+      // Trigger auto-tagging for all successfully uploaded photos in the background
+      for (const { photo, buffer } of successResults) {
+        processAutoTagging(userId, photo.id, buffer).catch(() => {
+          // Error already logged in processAutoTagging
+        });
+      }
 
       const errors = results
         .filter(

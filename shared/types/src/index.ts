@@ -27,6 +27,7 @@ export * from './user.js';
 export * from './api.js';
 export * from './firestore-types.js';
 export * from './google-photos.js';
+export * from './settings.js';
 
 // Re-export Zod for convenience
 export { z } from 'zod';

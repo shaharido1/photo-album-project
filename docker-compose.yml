@@ -1,6 +1,12 @@
 version: '3.8'
 
 services:
+  moondream:
+    image: vikhyat/moondream:latest
+    ports:
+      - "2020:2020"
+    restart: unless-stopped
+
   server:
     build:
       context: ./server
@@ -14,9 +20,13 @@ services:
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
+      # Moondream for auto image tagging
+      - MOONDREAM_ENDPOINT=http://moondream:2020/v1
     volumes:
       - ./server/src:/app/src
     command: node --watch src/index.js
+    depends_on:
+      - moondream
 
   client:
     build:

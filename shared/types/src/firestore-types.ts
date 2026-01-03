@@ -43,6 +43,12 @@ export interface FirestorePhoto {
   googlePhotoId?: string;
   googlePhotoUrl?: string;
   googlePhotoUrlExpiry?: TimestampLike;
+  // AI-generated metadata (optional for backwards compatibility)
+  caption?: string;
+  tags?: string[];
+  aiProcessed?: boolean;
+  aiProcessedAt?: TimestampLike;
+  aiProvider?: string; // e.g., 'moondream', 'openai', etc.
 }
 
 // =============================================================================
@@ -55,6 +61,10 @@ export interface FirestoreUser {
   photoURL: string | null;
   createdAt: TimestampLike;
   updatedAt: TimestampLike;
+  // User settings (optional for backwards compatibility)
+  settings?: {
+    autoImageTagging?: boolean;
+  };
 }
 
 // =============================================================================

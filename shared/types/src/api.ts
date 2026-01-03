@@ -92,6 +92,7 @@ export const API_ENDPOINTS = {
   ALBUMS: '/api/albums',
   FEEDBACK: '/api/feedback',
   AUTH_VERIFY: '/api/auth/verify',
+  SETTINGS: '/api/settings',
   // Google Photos endpoints
   GOOGLE_PHOTOS_AUTH_START: '/api/google-photos/auth/start',
   GOOGLE_PHOTOS_STATUS: '/api/google-photos/status',

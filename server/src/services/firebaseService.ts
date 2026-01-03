@@ -15,6 +15,9 @@ import {
   type FirestoreAlbum,
   type FirestoreAlbumPage,
   type FirestoreAlbumWithPages,
+  type UserSettings,
+  type UpdateSettingsRequest,
+  DEFAULT_USER_SETTINGS,
   firestorePhotoToApi,
 } from '@photo-album/types';
 
@@ -167,6 +170,93 @@ export const photoService = {
 
     await db().collection('photos').doc(photoId).delete();
     return true;
+  },
+
+  /**
+   * Update AI-generated data for a photo
+   */
+  async updateAiData(
+    photoId: string,
+    userId: string,
+    aiData: {
+      caption?: string;
+      tags?: string[];
+      aiProcessed?: boolean;
+      aiProvider?: string;
+    }
+  ): Promise<boolean> {
+    const doc = await db().collection('photos').doc(photoId).get();
+
+    if (!doc.exists) {
+      return false;
+    }
+
+    const data = doc.data() as FirestorePhoto;
+
+    // Verify ownership
+    if (data.userId !== userId) {
+      return false;
+    }
+
+    const updateData: Record<string, unknown> = {
+      updatedAt: Timestamp.now(),
+    };
+
+    if (aiData.caption !== undefined) updateData.caption = aiData.caption;
+    if (aiData.tags !== undefined) updateData.tags = aiData.tags;
+    if (aiData.aiProcessed !== undefined) updateData.aiProcessed = aiData.aiProcessed;
+    if (aiData.aiProvider !== undefined) updateData.aiProvider = aiData.aiProvider;
+    if (aiData.aiProcessed) updateData.aiProcessedAt = Timestamp.now();
+
+    await db().collection('photos').doc(photoId).update(updateData);
+    return true;
+  },
+};
+
+// ============================================
+// Settings Service
+// ============================================
+
+export const settingsService = {
+  /**
+   * Get user settings
+   */
+  async get(userId: string): Promise<UserSettings> {
+    const userRef = db().collection('users').doc(userId);
+    const doc = await userRef.get();
+
+    if (!doc.exists) {
+      return DEFAULT_USER_SETTINGS;
+    }
+
+    const userData = doc.data();
+    const settings = userData?.settings || {};
+
+    // Merge with defaults to ensure all settings exist
+    return {
+      ...DEFAULT_USER_SETTINGS,
+      ...settings,
+    };
+  },
+
+  /**
+   * Update user settings (partial update)
+   */
+  async update(userId: string, updates: UpdateSettingsRequest): Promise<void> {
+    const userRef = db().collection('users').doc(userId);
+
+    // Use dot notation to update nested settings field
+    const updateData: Record<string, unknown> = {
+      updatedAt: Timestamp.now(),
+    };
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== undefined) {
+        updateData[`settings.${key}`] = value;
+      }
+    }
+
+    await userRef.update(updateData);
   },
 };
 

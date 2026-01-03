@@ -24,6 +24,12 @@ export const PhotoSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   createdAt: z.string().datetime({ offset: true }),
+  // AI-generated metadata (optional for backwards compatibility)
+  caption: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  aiProcessed: z.boolean().optional(),
+  aiProcessedAt: z.string().datetime({ offset: true }).optional(),
+  aiProvider: z.string().optional(),
 });
 
 export type Photo = z.infer<typeof PhotoSchema>;
@@ -94,7 +100,7 @@ export type FirestorePhotoData = z.infer<typeof FirestorePhotoDataSchema>;
  * Transform Firestore photo document to API photo
  */
 export function firestorePhotoToApi(doc: FirestorePhoto, id: string): Photo {
-  return {
+  const photo: Photo = {
     id,
     name: doc.name,
     thumbnail: doc.thumbnail,
@@ -103,6 +109,17 @@ export function firestorePhotoToApi(doc: FirestorePhoto, id: string): Photo {
     height: doc.height,
     createdAt: doc.createdAt.toDate().toISOString(),
   };
+
+  // Include AI fields if present
+  if (doc.caption !== undefined) photo.caption = doc.caption;
+  if (doc.tags !== undefined) photo.tags = doc.tags;
+  if (doc.aiProcessed !== undefined) photo.aiProcessed = doc.aiProcessed;
+  if (doc.aiProcessedAt !== undefined) {
+    photo.aiProcessedAt = doc.aiProcessedAt.toDate().toISOString();
+  }
+  if (doc.aiProvider !== undefined) photo.aiProvider = doc.aiProvider;
+
+  return photo;
 }
 
 /**
