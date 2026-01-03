@@ -25,6 +25,7 @@ import type {
 } from '@/types';
 import { DEFAULT_FILTER_VALUES, FILTER_PRESETS } from '@/types';
 import { api, API_ENDPOINTS } from '@/services/apiClient';
+import { signOut } from '../auth/authSlice';
 
 // Simple UUID generator
 const generateId = (): string => {
@@ -634,6 +635,10 @@ const albumSlice = createSlice({
       })
       .addCase(addPageAsync.rejected, (state, action) => {
         state.error = action.payload ?? 'Failed to add page';
+      })
+      // Clear state on sign out
+      .addCase(signOut.fulfilled, () => {
+        return initialState;
       });
   },
 });

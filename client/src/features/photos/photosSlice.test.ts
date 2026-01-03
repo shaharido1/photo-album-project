@@ -22,6 +22,7 @@ import photosReducer, {
   selectUploadProgress,
   selectUploadError,
 } from './photosSlice';
+import { signOut } from '../auth/authSlice';
 import type { PhotosState, Photo, UploadProgress } from '@/types';
 
 // Mock the apiClient
@@ -457,6 +458,25 @@ describe('photosSlice', () => {
         expect(newState.items).toHaveLength(1);
         expect(newState.items[0].id).toBe('photo-2');
         expect(newState.selectedIds).not.toContain('photo-1');
+      });
+    });
+
+    describe('signOut', () => {
+      it('should clear state on signOut.fulfilled', () => {
+        const stateWithData: PhotosState = {
+          items: [mockPhoto],
+          selectedIds: ['photo-1'],
+          status: 'succeeded',
+          error: 'some error',
+          uploadStatus: 'failed',
+          uploadProgress: { current: 1, total: 1, progress: 100 },
+          uploadError: 'upload error',
+        };
+
+        const action = { type: signOut.fulfilled.type };
+        const newState = photosReducer(stateWithData, action);
+
+        expect(newState).toEqual(initialState);
       });
     });
   });

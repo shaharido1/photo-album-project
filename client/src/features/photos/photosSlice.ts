@@ -3,6 +3,7 @@ import type { RootState, AppDispatch } from '@/app/store';
 import type { Photo, PhotosState, UploadProgress } from '@/types';
 import { api, API_ENDPOINTS, uploadFiles } from '@/services/apiClient';
 import type { BatchUploadResponse } from '@photo-album/types';
+import { signOut } from '../auth/authSlice';
 
 const initialState: PhotosState = {
   items: [],
@@ -162,6 +163,10 @@ const photosSlice = createSlice({
         const photoId = action.payload;
         state.items = state.items.filter((photo) => photo.id !== photoId);
         state.selectedIds = state.selectedIds.filter((id) => id !== photoId);
+      })
+      // Clear state on sign out
+      .addCase(signOut.fulfilled, () => {
+        return initialState;
       });
   },
 });

@@ -38,6 +38,7 @@ import albumReducer, {
   selectSpreadInfo,
   selectTotalSpreads,
 } from './albumSlice';
+import { signOut } from '../auth/authSlice';
 import { DEFAULT_FILTER_VALUES, FILTER_PRESETS } from '@/types';
 import type {
   AlbumState,
@@ -1165,6 +1166,42 @@ describe('albumSlice', () => {
       expect(DEFAULT_FILTER_VALUES.sepia).toBe(0);
       expect(DEFAULT_FILTER_VALUES.invert).toBe(0);
       expect(DEFAULT_FILTER_VALUES.opacity).toBe(100);
+    });
+  });
+
+  describe('extraReducers', () => {
+    it('should clear state when signOut.fulfilled is dispatched', () => {
+      const stateWithData: AlbumState = {
+        album: {
+          id: 'album-1',
+          name: 'My Album',
+          size: '12x12',
+          pages: [createMockPage('page-1')],
+          currentPageIndex: 0,
+        },
+        selectedSlot: { pageIndex: 0, slotIndex: 0 },
+        viewMode: 'edit',
+        currentSpread: 2,
+        status: 'succeeded',
+        error: 'some error',
+        albums: [{ id: 'album-1', name: 'My Album', size: '12x12', currentPageIndex: 0 }],
+        albumsStatus: 'succeeded',
+      };
+
+      const action = { type: signOut.fulfilled.type };
+      const newState = albumReducer(stateWithData, action);
+
+      expect(newState.album.id).toBeNull();
+      expect(newState.album.name).toBe('Untitled Album');
+      expect(newState.album.size).toBe('10x10');
+      expect(newState.album.pages).toHaveLength(0);
+      expect(newState.selectedSlot).toBeNull();
+      expect(newState.viewMode).toBe('book');
+      expect(newState.currentSpread).toBe(0);
+      expect(newState.status).toBe('idle');
+      expect(newState.error).toBeNull();
+      expect(newState.albums).toHaveLength(0);
+      expect(newState.albumsStatus).toBe('idle');
     });
   });
 });

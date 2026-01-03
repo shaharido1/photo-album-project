@@ -13,6 +13,7 @@ import type {
 } from '@photo-album/types';
 import { addPhotos } from '../photos/photosSlice';
 import type { Photo } from '@/types';
+import { signOut } from '../auth/authSlice';
 
 interface GooglePhotosState {
   // Connection status
@@ -312,6 +313,10 @@ const googlePhotosSlice = createSlice({
       .addCase(importGooglePhotos.rejected, (state, action) => {
         state.importStatus = 'failed';
         state.importError = (action.payload as string) ?? 'Import failed';
+      })
+      // Clear state on sign out
+      .addCase(signOut.fulfilled, () => {
+        return initialState;
       });
   },
 });
