@@ -51,6 +51,8 @@ export function AuthDialog({
   const handleGoogleSignIn = async (): Promise<void> => {
     if (error) dispatch(clearError());
     const result = await dispatch(signInWithGoogle());
+
+
     if (signInWithGoogle.fulfilled.match(result)) {
       onOpenChange(false);
     }
@@ -160,6 +162,8 @@ export function AuthDialog({
                 </svg>
                 Continue with Google
               </Button>
+
+
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

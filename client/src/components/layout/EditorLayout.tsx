@@ -7,11 +7,14 @@ import { PropertiesPanel } from './PropertiesPanel';
 import { PageTimeline } from './PageTimeline';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
 import { selectViewMode, selectAlbumId } from '@/features/album/albumSlice';
-import { LandingPage } from '@/features/album/LandingPage';
+import { selectIsAuthenticated } from '@/features/auth/authSlice';
+import { HomePage } from '@/pages/HomePage';
+import { Dashboard } from '@/features/album/Dashboard';
 import { useAppSelector } from '@/app/hooks';
 
 export function EditorLayout(): JSX.Element {
   const viewMode = useAppSelector(selectViewMode);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const albumId = useAppSelector(selectAlbumId);
@@ -21,7 +24,7 @@ export function EditorLayout(): JSX.Element {
       <Header onCreateAlbum={() => setIsCreateDialogOpen(true)} />
 
       {!albumId ? (
-        <LandingPage />
+        isAuthenticated ? <Dashboard /> : <HomePage />
       ) : (
         <div className="flex-1 flex overflow-hidden">
           {viewMode === 'edit' && (

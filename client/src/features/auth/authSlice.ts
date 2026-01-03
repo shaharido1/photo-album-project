@@ -59,6 +59,8 @@ export const signInWithGoogle = createAsyncThunk<
   }
 });
 
+
+
 /**
  * Sign out
  */
@@ -204,6 +206,7 @@ const authSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload ?? 'Unknown error';
       })
+
       // Sign out
       .addCase(signOut.pending, (state) => {
         state.status = 'loading';

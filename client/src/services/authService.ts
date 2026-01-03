@@ -2,7 +2,6 @@
  * Authentication Service
  *
  * Provides Google Sign-In and Email/Password functionality using Firebase Auth.
- * Also supports dev mode authentication bypass.
  */
 
 import {
@@ -17,13 +16,6 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/config/firebase';
-import {
-  isDevAuthEnabled,
-  devSignIn,
-  devSignOut,
-  getDevIdToken,
-  subscribeToDevAuthChanges,
-} from './devAuthService';
 
 /**
  * User info returned from authentication
@@ -49,11 +41,6 @@ const toAuthUser = (user: User): AuthUser => ({
  * Sign in with Google popup
  */
 export const signInWithGoogle = async (): Promise<AuthUser> => {
-  // Dev mode bypass
-  if (isDevAuthEnabled()) {
-    return devSignIn({ displayName: 'Dev User (Google)' });
-  }
-
   const auth = getFirebaseAuth();
 
   if (!auth) {
@@ -73,11 +60,10 @@ export const signInWithGoogle = async (): Promise<AuthUser> => {
  * Sign out the current user
  */
 export const signOut = async (): Promise<void> => {
-  // Dev mode bypass
-  if (isDevAuthEnabled()) {
-    devSignOut();
-    return;
-  }
+  // Clear any legacy dev tokens that might be lingering
+  document.cookie = `dev_auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  document.cookie = `dev_auth_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  localStorage.removeItem('dev_auth_user');
 
   const auth = getFirebaseAuth();
 
@@ -92,11 +78,6 @@ export const signOut = async (): Promise<void> => {
  * Get the current user's ID token for API requests
  */
 export const getIdToken = async (): Promise<string | null> => {
-  // Dev mode bypass
-  if (isDevAuthEnabled()) {
-    return getDevIdToken();
-  }
-
   const auth = getFirebaseAuth();
 
   if (!auth || !auth.currentUser) {
@@ -112,17 +93,12 @@ export const getIdToken = async (): Promise<string | null> => {
 export const subscribeToAuthChanges = (
   callback: (user: AuthUser | null) => void
 ): (() => void) => {
-  // Dev mode bypass
-  if (isDevAuthEnabled()) {
-    return subscribeToDevAuthChanges(callback);
-  }
-
   const auth = getFirebaseAuth();
 
   if (!auth) {
     // If Firebase is not configured, immediately call with null
     callback(null);
-    return () => {};
+    return () => { };
   }
 
   return onAuthStateChanged(auth, (user) => {
@@ -134,10 +110,6 @@ export const subscribeToAuthChanges = (
  * Check if Firebase auth is available
  */
 export const isAuthAvailable = (): boolean => {
-  // Dev auth is always available when enabled
-  if (isDevAuthEnabled()) {
-    return true;
-  }
   return isFirebaseConfigured();
 };
 
@@ -148,11 +120,6 @@ export const signInWithEmail = async (
   email: string,
   password: string
 ): Promise<AuthUser> => {
-  // Dev mode bypass - accept any email/password
-  if (isDevAuthEnabled()) {
-    return devSignIn({ email, displayName: email.split('@')[0] });
-  }
-
   const auth = getFirebaseAuth();
 
   if (!auth) {
@@ -171,14 +138,6 @@ export const createAccountWithEmail = async (
   password: string,
   displayName?: string
 ): Promise<AuthUser> => {
-  // Dev mode bypass - just sign in with provided details
-  if (isDevAuthEnabled()) {
-    return devSignIn({
-      email,
-      displayName: displayName || email.split('@')[0],
-    });
-  }
-
   const auth = getFirebaseAuth();
 
   if (!auth) {
@@ -199,13 +158,6 @@ export const createAccountWithEmail = async (
  * Send password reset email
  */
 export const resetPassword = async (email: string): Promise<void> => {
-  // Dev mode bypass - just log and return
-  if (isDevAuthEnabled()) {
-    // eslint-disable-next-line no-console
-    console.log(`[Dev Auth] Password reset requested for: ${email}`);
-    return;
-  }
-
   const auth = getFirebaseAuth();
 
   if (!auth) {

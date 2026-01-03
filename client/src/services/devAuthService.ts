@@ -10,13 +10,11 @@ import type { AuthUser } from './authService';
 // Default dev user
 const devEmail = import.meta.env.VITE_DEV_AUTH_EMAIL || 'dev@example.com';
 const DEV_USER: AuthUser = {
-  uid: `dev-user-${devEmail.replace(/[^a-zA-Z0-0]/g, '-')}`,
+  uid: `dev-user-${devEmail.replace(/[^a-zA-Z0-9]/g, '-')}`,
   email: devEmail,
   displayName: 'Dev User',
   photoURL: null,
 };
-
-const DEV_AUTH_PASSWORD = import.meta.env.VITE_DEV_AUTH_PASSWORD || '';
 
 // Storage key for dev auth state
 const DEV_AUTH_KEY = 'dev_auth_user';
@@ -44,22 +42,49 @@ const getCookie = (name: string): string | null => {
 export const isDevAuthEnabled = (): boolean => {
   // Explicitly disabled
   if (import.meta.env.VITE_DEV_AUTH_ENABLED === 'false') return false;
-  // Enabled if explicitly set OR if in development mode
-  return import.meta.env.DEV || import.meta.env.VITE_DEV_AUTH_ENABLED === 'true';
+  // Enabled if explicitly set OR if in development mode OR in test mode
+  return (
+    import.meta.env.DEV ||
+    import.meta.env.MODE === 'test' ||
+    import.meta.env.VITE_DEV_AUTH_ENABLED === 'true'
+  );
 };
 
 /**
- * Get stored dev user from localStorage
+ * Get stored dev user
  */
 export const getDevUser = (): AuthUser | null => {
   if (!isDevAuthEnabled()) return null;
 
+  // In test environment, return default dev user if none stored
+  if (import.meta.env.MODE === 'test') {
+    return DEV_USER;
+  }
+
   try {
-    const stored = localStorage.getItem(DEV_AUTH_KEY);
-    return stored ? JSON.parse(stored) : null;
+    // Try cookie first (preferred for persistence as requested)
+    const cookieStored = getCookie(DEV_AUTH_KEY);
+    if (cookieStored) {
+      return JSON.parse(decodeURIComponent(cookieStored));
+    }
+
+    // Fallback to localStorage
+    const localStored = localStorage.getItem(DEV_AUTH_KEY);
+    return localStored ? JSON.parse(localStored) : null;
   } catch {
     return null;
   }
+};
+
+// Observers for auth state changes
+type AuthListener = (user: AuthUser | null) => void;
+const listeners: AuthListener[] = [];
+
+/**
+ * Notify all listeners of state change
+ */
+const notifyListeners = (user: AuthUser | null) => {
+  listeners.forEach((listener) => listener(user));
 };
 
 /**
@@ -71,11 +96,17 @@ export const devSignIn = (customUser?: Partial<AuthUser>): AuthUser => {
     ...customUser,
   };
 
-  localStorage.setItem(DEV_AUTH_KEY, JSON.stringify(user));
+  const userStr = JSON.stringify(user);
+  const encodedUser = encodeURIComponent(userStr);
+
+  // Persist to both localStorage and Cookie
+  localStorage.setItem(DEV_AUTH_KEY, userStr);
+  setCookie(DEV_AUTH_KEY, encodedUser);
 
   // Also cache token in cookie
   setCookie(DEV_TOKEN_COOKIE, `dev-token:${user.uid}`);
 
+  notifyListeners(user);
   return user;
 };
 
@@ -85,6 +116,8 @@ export const devSignIn = (customUser?: Partial<AuthUser>): AuthUser => {
 export const devSignOut = (): void => {
   localStorage.removeItem(DEV_AUTH_KEY);
   document.cookie = `${DEV_TOKEN_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  document.cookie = `${DEV_AUTH_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  notifyListeners(null);
 };
 
 /**
@@ -106,32 +139,37 @@ export const getDevIdToken = (): string | null => {
 };
 
 /**
- * Subscribe to dev auth changes (for compatibility with real auth service)
+ * Subscribe to dev auth changes
  */
 export const subscribeToDevAuthChanges = (
-  callback: (user: AuthUser | null) => void
+  callback: AuthListener
 ): (() => void) => {
-  // Get current user
-  let user = getDevUser();
-
-  // Auto-login: If no user and dev auth is enabled, automatically sign in
-  if (!user && isDevAuthEnabled()) {
-    // Check if auto-login is explicitly disabled
-    if (import.meta.env.VITE_DEV_AUTH_AUTO_LOGIN !== 'false') {
-      user = devSignIn();
-    }
-  }
+  // Get current user from storage/cookies
+  const user = getDevUser();
 
   // Immediately call with current state
   callback(user);
 
+  // Add to listeners
+  listeners.push(callback);
+
   // Listen for storage changes (for multi-tab support)
   const handleStorage = (e: StorageEvent): void => {
     if (e.key === DEV_AUTH_KEY) {
-      callback(e.newValue ? JSON.parse(e.newValue) : null);
+      const newUser = e.newValue ? JSON.parse(e.newValue) : null;
+      // We don't notify all listeners here to avoid loops if the change originated here 
+      // (though storage events don't fire on same tab anyway)
+      callback(newUser);
     }
   };
 
   window.addEventListener('storage', handleStorage);
-  return () => window.removeEventListener('storage', handleStorage);
+
+  return () => {
+    const index = listeners.indexOf(callback);
+    if (index > -1) {
+      listeners.splice(index, 1);
+    }
+    window.removeEventListener('storage', handleStorage);
+  };
 };

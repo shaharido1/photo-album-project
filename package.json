@@ -1,6 +1,6 @@
 {
   "name": "hello-world-fullstack",
-  "version": "1.0.30",
+  "version": "1.0.31",
   "description": "Hello World full-stack app with Node.js, React-Redux, and Docker",
   "private": true,
   "scripts": {
