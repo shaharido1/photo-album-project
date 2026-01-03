@@ -45,14 +45,26 @@ if (localStorageDir) {
 
 app.use('/api', apiRoutes);
 
-const clientBuildPath =
-  process.env.NODE_ENV === 'production'
-    ? path.join(__dirname, '../client/dist')
-    : path.join(__dirname, '../../client/dist');
-app.use(express.static(clientBuildPath));
+// Only serve static files in production
+// In development, the Vite dev server handles the frontend
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(clientBuildPath));
 
-app.get('*', (_req: Request, res: Response): void => {
-  res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
+  app.get('*', (_req: Request, res: Response): void => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+} else {
+  // In development, redirect non-API routes to the Vite dev server
+  const VITE_DEV_SERVER = process.env.VITE_DEV_URL || 'http://localhost:5173';
+
+  app.get('*', (_req: Request, res: Response): void => {
+    // Preserve query params for OAuth callbacks
+    const queryString = Object.keys(_req.query).length
+      ? '?' + new URLSearchParams(_req.query as Record<string, string>).toString()
+      : '';
+    res.redirect(`${VITE_DEV_SERVER}${_req.path}${queryString}`);
+  });
+}
 
 export { app };
