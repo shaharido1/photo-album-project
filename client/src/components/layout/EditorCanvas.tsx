@@ -29,6 +29,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import type { PageSlot, LayoutSlot, Photo } from '@/types';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type Konva from 'konva';
+import { buildFilterString } from './FilterControls';
 
 type ImageStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
@@ -109,11 +110,28 @@ function PhotoSlot({
   const transformerRef = useRef<Konva.Transformer>(null);
   const [image] = useImage(photo?.fullSize || photo?.thumbnail);
 
+  // Get filter string for this slot
+  const filterString = slot.filters
+    ? buildFilterString(slot.filters)
+    : 'none';
+
   // Calculate slot position and size in pixels
   const slotX = (slotDef.x / 100) * stageWidth;
   const slotY = (slotDef.y / 100) * stageHeight;
   const slotWidth = (slotDef.width / 100) * stageWidth;
   const slotHeight = (slotDef.height / 100) * stageHeight;
+
+  // Cache the image node when filters change (required for CSS filters in Konva)
+  useEffect(() => {
+    if (shapeRef.current && image && filterString !== 'none') {
+      shapeRef.current.cache();
+      shapeRef.current.getLayer()?.batchDraw();
+    } else if (shapeRef.current && filterString === 'none') {
+      // Clear cache when no filters applied
+      shapeRef.current.clearCache();
+      shapeRef.current.getLayer()?.batchDraw();
+    }
+  }, [image, filterString]);
 
   // Update transformer when selected
   useEffect(() => {
@@ -190,7 +208,7 @@ function PhotoSlot({
         dash={!photo ? [5, 5] : undefined}
       />
 
-      {/* Photo image with clipping */}
+      {/* Photo image with clipping and filters */}
       {photo && image && (
         <Group
           clipFunc={(ctx) => {
@@ -209,6 +227,7 @@ function PhotoSlot({
             onTap={handleClick}
             onDragEnd={handleDragEnd}
             onTransformEnd={handleTransformEnd}
+            filters={filterString !== 'none' ? [filterString] : undefined}
           />
         </Group>
       )}

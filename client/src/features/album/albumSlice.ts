@@ -20,7 +20,10 @@ import type {
   LayoutTemplateRefs,
   ViewMode,
   SpreadInfo,
+  PhotoFilterValues,
+  FilterPresetName,
 } from '@/types';
+import { DEFAULT_FILTER_VALUES, FILTER_PRESETS } from '@/types';
 import { api, API_ENDPOINTS } from '@/services/apiClient';
 
 // Simple UUID generator
@@ -405,6 +408,58 @@ const albumSlice = createSlice({
       }
     },
 
+    updateSlotFilters: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        slotIndex: number;
+        filters: Partial<PhotoFilterValues>;
+      }>
+    ) => {
+      const { pageIndex, slotIndex, filters } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page && page.slots[slotIndex]) {
+        const currentFilters = page.slots[slotIndex].filters || { ...DEFAULT_FILTER_VALUES };
+        page.slots[slotIndex].filters = { ...currentFilters, ...filters };
+        // Clear preset when manually adjusting filters
+        page.slots[slotIndex].filterPreset = undefined;
+      }
+    },
+
+    setSlotFilterPreset: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        slotIndex: number;
+        preset: FilterPresetName;
+      }>
+    ) => {
+      const { pageIndex, slotIndex, preset } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page && page.slots[slotIndex]) {
+        const presetData = FILTER_PRESETS.find((p) => p.name === preset);
+        if (presetData) {
+          page.slots[slotIndex].filters = { ...presetData.values };
+          page.slots[slotIndex].filterPreset = preset;
+        }
+      }
+    },
+
+    resetSlotFilters: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        slotIndex: number;
+      }>
+    ) => {
+      const { pageIndex, slotIndex } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page && page.slots[slotIndex]) {
+        page.slots[slotIndex].filters = { ...DEFAULT_FILTER_VALUES };
+        page.slots[slotIndex].filterPreset = 'none';
+      }
+    },
+
     selectSlot: (state, action: PayloadAction<SelectedSlotRef | null>) => {
       state.selectedSlot = action.payload;
     },
@@ -605,6 +660,9 @@ export const {
   updateSlotPosition,
   updateSlotScale,
   updateSlotRotation,
+  updateSlotFilters,
+  setSlotFilterPreset,
+  resetSlotFilters,
   selectSlot,
   clearAlbum,
   setViewMode,

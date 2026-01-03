@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Trash2, RotateCw, ZoomIn, Move } from 'lucide-react';
+import { FilterControls } from './FilterControls';
 import {
   selectSelectedSlot,
   selectCurrentPage,
@@ -260,6 +261,18 @@ export function PropertiesPanel(): JSX.Element {
                 Reset
               </Button>
             </div>
+
+            <Separator />
+
+            {/* Filter Controls */}
+            {selectedSlot && (
+              <FilterControls
+                slot={slot}
+                pageIndex={selectedSlot.pageIndex}
+                slotIndex={selectedSlot.slotIndex}
+                photoThumbnail={photo.thumbnail}
+              />
+            )}
 
             <Separator />
 

@@ -195,6 +195,6 @@ describe('App', () => {
       </Provider>
     );
 
-    expect(screen.getByText('Memories worth keeping.')).toBeInTheDocument();
+    expect(screen.getByText(/keeping forever/i)).toBeInTheDocument();
   });
 });

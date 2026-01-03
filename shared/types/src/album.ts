@@ -133,6 +133,173 @@ export type LayoutTemplateRef = z.infer<typeof LayoutTemplateRefSchema>;
 export type LayoutTemplateRefs = Record<string, LayoutTemplateRef>;
 
 // =============================================================================
+// Photo Filters
+// =============================================================================
+
+/**
+ * Individual filter values (CSS filter properties)
+ */
+export const PhotoFilterValuesSchema = z.object({
+  brightness: z.number().min(0).max(200).default(100),
+  contrast: z.number().min(0).max(200).default(100),
+  saturation: z.number().min(0).max(200).default(100),
+  hue: z.number().min(-180).max(180).default(0),
+  blur: z.number().min(0).max(20).default(0),
+  grayscale: z.number().min(0).max(100).default(0),
+  sepia: z.number().min(0).max(100).default(0),
+  invert: z.number().min(0).max(100).default(0),
+  opacity: z.number().min(0).max(100).default(100),
+});
+
+export type PhotoFilterValues = z.infer<typeof PhotoFilterValuesSchema>;
+
+/**
+ * Available filter preset names
+ */
+export const FilterPresetNameSchema = z.enum([
+  'none',
+  'dynamic',
+  'vivid',
+  'warm',
+  'cool',
+  'vintage',
+  'dramatic',
+  'soft',
+  'noir',
+  'sunset',
+  'forest',
+  'ocean',
+  'fade',
+  'sharp',
+  'dreamy',
+]);
+
+export type FilterPresetName = z.infer<typeof FilterPresetNameSchema>;
+
+/**
+ * Filter preset definition
+ */
+export const FilterPresetSchema = z.object({
+  name: FilterPresetNameSchema,
+  label: z.string(),
+  description: z.string(),
+  values: PhotoFilterValuesSchema,
+});
+
+export type FilterPreset = z.infer<typeof FilterPresetSchema>;
+
+/**
+ * Default filter values
+ */
+export const DEFAULT_FILTER_VALUES: PhotoFilterValues = {
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+  hue: 0,
+  blur: 0,
+  grayscale: 0,
+  sepia: 0,
+  invert: 0,
+  opacity: 100,
+};
+
+/**
+ * Filter presets with their values
+ */
+export const FILTER_PRESETS: FilterPreset[] = [
+  {
+    name: 'none',
+    label: 'None',
+    description: 'Original photo with no filters',
+    values: { ...DEFAULT_FILTER_VALUES },
+  },
+  {
+    name: 'dynamic',
+    label: 'Dynamic',
+    description: 'Enhanced contrast and saturation for a punchy look',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 105, contrast: 120, saturation: 115 },
+  },
+  {
+    name: 'vivid',
+    label: 'Vivid',
+    description: 'Bold, vibrant colors that pop',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 105, contrast: 110, saturation: 140 },
+  },
+  {
+    name: 'warm',
+    label: 'Warm',
+    description: 'Golden, cozy tones',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 105, saturation: 110, hue: 15, sepia: 15 },
+  },
+  {
+    name: 'cool',
+    label: 'Cool',
+    description: 'Blue, crisp tones',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 100, saturation: 90, hue: -15 },
+  },
+  {
+    name: 'vintage',
+    label: 'Vintage',
+    description: 'Classic retro film look',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 95, contrast: 90, saturation: 80, sepia: 30 },
+  },
+  {
+    name: 'dramatic',
+    label: 'Dramatic',
+    description: 'High contrast cinematic style',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 95, contrast: 140, saturation: 90 },
+  },
+  {
+    name: 'soft',
+    label: 'Soft',
+    description: 'Gentle, dreamy appearance',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 105, contrast: 90, saturation: 95, blur: 0.5 },
+  },
+  {
+    name: 'noir',
+    label: 'Noir',
+    description: 'Classic black and white',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 100, contrast: 120, grayscale: 100 },
+  },
+  {
+    name: 'sunset',
+    label: 'Sunset',
+    description: 'Warm orange and pink tones',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 105, saturation: 120, hue: 20, sepia: 20 },
+  },
+  {
+    name: 'forest',
+    label: 'Forest',
+    description: 'Rich green and earthy tones',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 95, contrast: 105, saturation: 110, hue: -10 },
+  },
+  {
+    name: 'ocean',
+    label: 'Ocean',
+    description: 'Cool blue and teal tones',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 100, saturation: 105, hue: -25 },
+  },
+  {
+    name: 'fade',
+    label: 'Fade',
+    description: 'Washed out, muted tones',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 110, contrast: 85, saturation: 70 },
+  },
+  {
+    name: 'sharp',
+    label: 'Sharp',
+    description: 'Crisp, high clarity look',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 100, contrast: 115, saturation: 105 },
+  },
+  {
+    name: 'dreamy',
+    label: 'Dreamy',
+    description: 'Soft, ethereal glow',
+    values: { ...DEFAULT_FILTER_VALUES, brightness: 110, contrast: 85, saturation: 90, blur: 1 },
+  },
+];
+
+// =============================================================================
 // Page Slots
 // =============================================================================
 
@@ -145,6 +312,8 @@ export const PageSlotSchema = z.object({
   position: PositionSchema,
   scale: z.number().positive(),
   rotation: z.number(),
+  filters: PhotoFilterValuesSchema.optional(),
+  filterPreset: FilterPresetNameSchema.optional(),
 });
 
 export type PageSlot = z.infer<typeof PageSlotSchema>;

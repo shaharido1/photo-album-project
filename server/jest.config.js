@@ -4,6 +4,9 @@ export default {
   maxWorkers: 1,
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
+  // Setup files for both unit and integration tests
+  setupFiles: ['<rootDir>/tests/unit/setupEnv.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/unit/setup.ts'],
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
@@ -18,10 +21,10 @@ export default {
     ],
   },
   moduleFileExtensions: ['ts', 'js'],
-  // Run both unit and integration via projects
-  projects: [
-    '<rootDir>/jest.config.unit.js',
-    '<rootDir>/jest.config.integration.js',
+  // Match all tests in unit and integration folders
+  testMatch: [
+    '**/tests/unit/**/*.test.ts',
+    '**/tests/integration/**/*.test.ts',
   ],
   collectCoverageFrom: [
     'src/**/*.ts',

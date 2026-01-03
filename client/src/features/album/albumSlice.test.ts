@@ -13,6 +13,9 @@ import albumReducer, {
   updateSlotPosition,
   updateSlotScale,
   updateSlotRotation,
+  updateSlotFilters,
+  setSlotFilterPreset,
+  resetSlotFilters,
   selectSlot,
   clearAlbum,
   setViewMode,
@@ -35,6 +38,7 @@ import albumReducer, {
   selectSpreadInfo,
   selectTotalSpreads,
 } from './albumSlice';
+import { DEFAULT_FILTER_VALUES, FILTER_PRESETS } from '@/types';
 import type {
   AlbumState,
   Album,
@@ -727,6 +731,422 @@ describe('albumSlice', () => {
       expect(LAYOUT_TEMPLATES['single'].slots).toBe(1);
       expect(LAYOUT_TEMPLATES['4-grid'].slots).toBe(4);
       expect(LAYOUT_TEMPLATES['6-grid'].slots).toBe(6);
+    });
+  });
+
+  // =============================================================================
+  // FILTER ACTIONS TESTS
+  // =============================================================================
+
+  describe('updateSlotFilters', () => {
+    it('should update a single filter property', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { brightness: 120 },
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filters?.brightness).toBe(120);
+      // Other values should be defaults
+      expect(newState.album.pages[0].slots[0].filters?.contrast).toBe(100);
+      expect(newState.album.pages[0].slots[0].filters?.saturation).toBe(100);
+    });
+
+    it('should update multiple filter properties at once', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { brightness: 110, contrast: 130, saturation: 80 },
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filters?.brightness).toBe(110);
+      expect(newState.album.pages[0].slots[0].filters?.contrast).toBe(130);
+      expect(newState.album.pages[0].slots[0].filters?.saturation).toBe(80);
+    });
+
+    it('should clear filterPreset when manually adjusting filters', () => {
+      const stateWithPages = createStateWithPages(1);
+      // First set a preset
+      let newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'vivid',
+        })
+      );
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('vivid');
+
+      // Then update manually
+      newState = albumReducer(
+        newState,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { brightness: 50 },
+        })
+      );
+      expect(newState.album.pages[0].slots[0].filterPreset).toBeUndefined();
+    });
+
+    it('should preserve existing filter values when updating', () => {
+      const stateWithPages = createStateWithPages(1);
+      let newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { brightness: 120 },
+        })
+      );
+
+      newState = albumReducer(
+        newState,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { contrast: 140 },
+        })
+      );
+
+      // Both values should be preserved
+      expect(newState.album.pages[0].slots[0].filters?.brightness).toBe(120);
+      expect(newState.album.pages[0].slots[0].filters?.contrast).toBe(140);
+    });
+
+    it('should not update with invalid page index', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 999,
+          slotIndex: 0,
+          filters: { brightness: 120 },
+        })
+      );
+
+      // State should be unchanged
+      expect(newState.album.pages[0].slots[0].filters).toBeUndefined();
+    });
+
+    it('should not update with invalid slot index', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 999,
+          filters: { brightness: 120 },
+        })
+      );
+
+      // State should be unchanged
+      expect(newState.album.pages[0].slots[0].filters).toBeUndefined();
+    });
+  });
+
+  describe('setSlotFilterPreset', () => {
+    it('should apply dynamic preset correctly', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'dynamic',
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('dynamic');
+      expect(newState.album.pages[0].slots[0].filters?.brightness).toBe(105);
+      expect(newState.album.pages[0].slots[0].filters?.contrast).toBe(120);
+      expect(newState.album.pages[0].slots[0].filters?.saturation).toBe(115);
+    });
+
+    it('should apply noir (grayscale) preset correctly', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'noir',
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('noir');
+      expect(newState.album.pages[0].slots[0].filters?.grayscale).toBe(100);
+      expect(newState.album.pages[0].slots[0].filters?.contrast).toBe(120);
+    });
+
+    it('should apply vintage preset correctly', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'vintage',
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('vintage');
+      expect(newState.album.pages[0].slots[0].filters?.sepia).toBe(30);
+      expect(newState.album.pages[0].slots[0].filters?.saturation).toBe(80);
+    });
+
+    it('should apply none preset to reset to defaults', () => {
+      const stateWithPages = createStateWithPages(1);
+      // First apply a filter
+      let newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'vivid',
+        })
+      );
+
+      // Then apply none
+      newState = albumReducer(
+        newState,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'none',
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('none');
+      expect(newState.album.pages[0].slots[0].filters).toEqual(DEFAULT_FILTER_VALUES);
+    });
+
+    it('should replace previous filter values completely', () => {
+      const stateWithPages = createStateWithPages(1);
+      // Apply vivid first
+      let newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'vivid',
+        })
+      );
+      expect(newState.album.pages[0].slots[0].filters?.saturation).toBe(140);
+
+      // Apply cool (which has lower saturation)
+      newState = albumReducer(
+        newState,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'cool',
+        })
+      );
+      expect(newState.album.pages[0].slots[0].filters?.saturation).toBe(90);
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('cool');
+    });
+
+    it('should not update with invalid page index', () => {
+      const stateWithPages = createStateWithPages(1);
+      const newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 999,
+          slotIndex: 0,
+          preset: 'dynamic',
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filterPreset).toBeUndefined();
+    });
+  });
+
+  describe('resetSlotFilters', () => {
+    it('should reset all filters to defaults', () => {
+      const stateWithPages = createStateWithPages(1);
+      // First apply some filters
+      let newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { brightness: 150, contrast: 80, saturation: 200, grayscale: 50 },
+        })
+      );
+
+      // Reset
+      newState = albumReducer(
+        newState,
+        resetSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filters).toEqual(DEFAULT_FILTER_VALUES);
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('none');
+    });
+
+    it('should reset preset to none', () => {
+      const stateWithPages = createStateWithPages(1);
+      // Apply a preset
+      let newState = albumReducer(
+        stateWithPages,
+        setSlotFilterPreset({
+          pageIndex: 0,
+          slotIndex: 0,
+          preset: 'dramatic',
+        })
+      );
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('dramatic');
+
+      // Reset
+      newState = albumReducer(
+        newState,
+        resetSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+        })
+      );
+
+      expect(newState.album.pages[0].slots[0].filterPreset).toBe('none');
+    });
+
+    it('should not affect other slots', () => {
+      // Create a state with a 4-grid layout (4 slots)
+      const stateWithPages: AlbumState = {
+        ...initialState,
+        album: {
+          ...initialState.album,
+          id: 'album-1',
+          pages: [
+            {
+              id: 'page-1',
+              layoutId: '4-grid',
+              background: '#ffffff',
+              slots: Array.from({ length: 4 }, (_, i) => ({
+                id: `slot-${i}`,
+                photoId: null,
+                position: { x: 0, y: 0 },
+                scale: 1,
+                rotation: 0,
+              })),
+            },
+          ],
+        },
+      };
+
+      // Apply filters to slot 0 and slot 1
+      let newState = albumReducer(
+        stateWithPages,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+          filters: { brightness: 150 },
+        })
+      );
+      newState = albumReducer(
+        newState,
+        updateSlotFilters({
+          pageIndex: 0,
+          slotIndex: 1,
+          filters: { contrast: 180 },
+        })
+      );
+
+      // Reset only slot 0
+      newState = albumReducer(
+        newState,
+        resetSlotFilters({
+          pageIndex: 0,
+          slotIndex: 0,
+        })
+      );
+
+      // Slot 0 should be reset
+      expect(newState.album.pages[0].slots[0].filters?.brightness).toBe(100);
+      // Slot 1 should still have its filter
+      expect(newState.album.pages[0].slots[1].filters?.contrast).toBe(180);
+    });
+  });
+
+  describe('FILTER_PRESETS constant', () => {
+    it('should have all expected presets', () => {
+      const presetNames = FILTER_PRESETS.map((p) => p.name);
+      expect(presetNames).toContain('none');
+      expect(presetNames).toContain('dynamic');
+      expect(presetNames).toContain('vivid');
+      expect(presetNames).toContain('warm');
+      expect(presetNames).toContain('cool');
+      expect(presetNames).toContain('vintage');
+      expect(presetNames).toContain('dramatic');
+      expect(presetNames).toContain('soft');
+      expect(presetNames).toContain('noir');
+      expect(presetNames).toContain('sunset');
+      expect(presetNames).toContain('forest');
+      expect(presetNames).toContain('ocean');
+      expect(presetNames).toContain('fade');
+      expect(presetNames).toContain('sharp');
+      expect(presetNames).toContain('dreamy');
+    });
+
+    it('should have 15 presets total', () => {
+      expect(FILTER_PRESETS).toHaveLength(15);
+    });
+
+    it('should have none preset with default values', () => {
+      const nonePreset = FILTER_PRESETS.find((p) => p.name === 'none');
+      expect(nonePreset).toBeDefined();
+      expect(nonePreset?.values).toEqual(DEFAULT_FILTER_VALUES);
+    });
+
+    it('should have valid filter values in all presets', () => {
+      FILTER_PRESETS.forEach((preset) => {
+        expect(preset.values.brightness).toBeGreaterThanOrEqual(0);
+        expect(preset.values.brightness).toBeLessThanOrEqual(200);
+        expect(preset.values.contrast).toBeGreaterThanOrEqual(0);
+        expect(preset.values.contrast).toBeLessThanOrEqual(200);
+        expect(preset.values.saturation).toBeGreaterThanOrEqual(0);
+        expect(preset.values.saturation).toBeLessThanOrEqual(200);
+        expect(preset.values.hue).toBeGreaterThanOrEqual(-180);
+        expect(preset.values.hue).toBeLessThanOrEqual(180);
+        expect(preset.values.grayscale).toBeGreaterThanOrEqual(0);
+        expect(preset.values.grayscale).toBeLessThanOrEqual(100);
+        expect(preset.values.sepia).toBeGreaterThanOrEqual(0);
+        expect(preset.values.sepia).toBeLessThanOrEqual(100);
+        expect(preset.values.blur).toBeGreaterThanOrEqual(0);
+        expect(preset.values.blur).toBeLessThanOrEqual(20);
+      });
+    });
+
+    it('each preset should have a label and description', () => {
+      FILTER_PRESETS.forEach((preset) => {
+        expect(preset.label).toBeTruthy();
+        expect(preset.description).toBeTruthy();
+      });
+    });
+  });
+
+  describe('DEFAULT_FILTER_VALUES constant', () => {
+    it('should have neutral default values', () => {
+      expect(DEFAULT_FILTER_VALUES.brightness).toBe(100);
+      expect(DEFAULT_FILTER_VALUES.contrast).toBe(100);
+      expect(DEFAULT_FILTER_VALUES.saturation).toBe(100);
+      expect(DEFAULT_FILTER_VALUES.hue).toBe(0);
+      expect(DEFAULT_FILTER_VALUES.blur).toBe(0);
+      expect(DEFAULT_FILTER_VALUES.grayscale).toBe(0);
+      expect(DEFAULT_FILTER_VALUES.sepia).toBe(0);
+      expect(DEFAULT_FILTER_VALUES.invert).toBe(0);
+      expect(DEFAULT_FILTER_VALUES.opacity).toBe(100);
     });
   });
 });
