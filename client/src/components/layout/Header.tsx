@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { selectAlbumName, selectAlbumId } from '@/features/album/albumSlice';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
+import { ExportDialog } from '@/components/export/ExportDialog';
 import { LoginButton } from '@/components/auth/LoginButton';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ViewModeToggle } from './ViewModeToggle';
@@ -25,6 +26,7 @@ const getInitialDarkMode = (): boolean => {
 export function Header({ onCreateAlbum }: HeaderProps): JSX.Element {
   const [isDark, setIsDark] = useState(getInitialDarkMode);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   const albumId = useAppSelector(selectAlbumId);
   const albumName = useAppSelector(selectAlbumName);
@@ -65,7 +67,7 @@ export function Header({ onCreateAlbum }: HeaderProps): JSX.Element {
               <Save className="h-4 w-4 mr-2" />
               Save
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsExportDialogOpen(true)}>
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -100,6 +102,11 @@ export function Header({ onCreateAlbum }: HeaderProps): JSX.Element {
       <FeedbackDialog
         open={isFeedbackDialogOpen}
         onOpenChange={setIsFeedbackDialogOpen}
+      />
+
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
       />
     </header>
   );
