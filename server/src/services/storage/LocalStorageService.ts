@@ -19,8 +19,13 @@ import type {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Local storage directory (relative to server root)
-const STORAGE_DIR = path.join(__dirname, '../../../firebase-storage-mock');
+// Local storage directory
+// Use STORAGE_PATH_FOLDER from env, or fall back to the mock directory relative to server root
+const STORAGE_DIR = process.env.STORAGE_PATH_FOLDER
+  ? (path.isAbsolute(process.env.STORAGE_PATH_FOLDER)
+    ? process.env.STORAGE_PATH_FOLDER
+    : path.join(process.env.PWD || process.cwd(), process.env.STORAGE_PATH_FOLDER))
+  : path.join(__dirname, '../../../firebase-storage-mock');
 
 // Thumbnail settings
 const THUMBNAIL_WIDTH = 300;
