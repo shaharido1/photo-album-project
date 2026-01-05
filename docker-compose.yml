@@ -1,11 +1,32 @@
 version: '3.8'
 
 services:
-  moondream:
-    image: vikhyat/moondream:latest
+  ollama:
+    image: ollama/ollama:latest
     ports:
-      - "2020:2020"
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # Pull moondream model on startup
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    entrypoint: ["/bin/sh", "-c", "ollama pull moondream"]
+    restart: "no"
 
   server:
     build:
@@ -20,13 +41,16 @@ services:
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL:-}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY:-}
-      # Moondream for auto image tagging
-      - MOONDREAM_ENDPOINT=http://moondream:2020/v1
+      # Ollama for auto image tagging (moondream model)
+      - OLLAMA_ENDPOINT=http://ollama:11434
     volumes:
       - ./server/src:/app/src
     command: node --watch src/index.js
     depends_on:
-      - moondream
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
 
   client:
     build:
@@ -48,3 +72,6 @@ services:
       - ./client/index.html:/app/index.html
     depends_on:
       - server
+
+volumes:
+  ollama_data:

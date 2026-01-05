@@ -80,12 +80,37 @@ export interface FirestorePageSlot {
   rotation: number;
 }
 
+export interface FirestoreFreestyleItem {
+  id: string;
+  photoId: string;
+  photoUrl?: string | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  zIndex: number;
+  filters?: {
+    brightness: number;
+    contrast: number;
+    saturation: number;
+    hue: number;
+    blur: number;
+    grayscale: number;
+    sepia: number;
+    invert: number;
+    opacity: number;
+  };
+  filterPreset?: 'none' | 'dynamic' | 'vivid' | 'warm' | 'cool' | 'vintage' | 'dramatic' | 'soft' | 'noir' | 'sunset' | 'forest' | 'ocean' | 'fade' | 'sharp' | 'dreamy';
+}
+
 export interface FirestoreAlbumPage {
   id?: string;
   layoutId: string;
   background: string;
   order: number;
   slots: FirestorePageSlot[];
+  freestyleItems?: FirestoreFreestyleItem[];
 }
 
 export interface FirestoreAlbum {

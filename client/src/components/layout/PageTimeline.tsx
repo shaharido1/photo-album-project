@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Layers } from 'lucide-react';
 import {
   selectPages,
   selectCurrentPageIndex,
@@ -61,34 +61,76 @@ function PageThumbnail({
     >
       {/* Mini layout preview */}
       <div className="w-full h-full relative p-0.5">
-        {layout?.slots.map((slotDef, i) => {
-          const slot = page.slots[i];
-          const photo = slot?.photoId
-            ? photos.find((p) => p.id === slot.photoId)
-            : null;
-
-          return (
-            <div
-              key={i}
-              className="absolute rounded-sm overflow-hidden"
-              style={{
-                left: `${slotDef.x}%`,
-                top: `${slotDef.y}%`,
-                width: `${slotDef.width}%`,
-                height: `${slotDef.height}%`,
-                backgroundColor: photo ? undefined : '#e5e7eb',
-              }}
-            >
-              {photo && (
-                <img
-                  src={photo.thumbnail}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              )}
+        {page.layoutId === 'freestyle' ? (
+          // Freestyle page - show icon or thumbnails of items
+          page.freestyleItems && page.freestyleItems.length > 0 ? (
+            // Show miniature thumbnails of freestyle items
+            page.freestyleItems
+              .slice()
+              .sort((a, b) => a.zIndex - b.zIndex)
+              .slice(0, 4) // Only show first 4 items
+              .map((item, i) => {
+                const photo = photos.find((p) => p.id === item.photoId);
+                return (
+                  <div
+                    key={item.id}
+                    className="absolute rounded-sm overflow-hidden"
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: `${item.width}%`,
+                      height: `${item.height}%`,
+                      transform: `rotate(${item.rotation}deg)`,
+                      zIndex: i,
+                    }}
+                  >
+                    {photo && (
+                      <img
+                        src={photo.thumbnail}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                );
+              })
+          ) : (
+            // Empty freestyle page - show icon
+            <div className="w-full h-full flex items-center justify-center">
+              <Layers className="h-6 w-6 text-muted-foreground/50" />
             </div>
-          );
-        })}
+          )
+        ) : (
+          // Template layout - show slots
+          layout?.slots.map((slotDef, i) => {
+            const slot = page.slots[i];
+            const photo = slot?.photoId
+              ? photos.find((p) => p.id === slot.photoId)
+              : null;
+
+            return (
+              <div
+                key={i}
+                className="absolute rounded-sm overflow-hidden"
+                style={{
+                  left: `${slotDef.x}%`,
+                  top: `${slotDef.y}%`,
+                  width: `${slotDef.width}%`,
+                  height: `${slotDef.height}%`,
+                  backgroundColor: photo ? undefined : '#e5e7eb',
+                }}
+              >
+                {photo && (
+                  <img
+                    src={photo.thumbnail}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Page number */}

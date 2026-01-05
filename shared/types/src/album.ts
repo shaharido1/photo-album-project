@@ -300,6 +300,37 @@ export const FILTER_PRESETS: FilterPreset[] = [
 ];
 
 // =============================================================================
+// Freestyle Canvas Items
+// =============================================================================
+
+/**
+ * Freestyle canvas item - freely positioned image on canvas
+ * Unlike slots, freestyle items can be placed anywhere, rotated freely,
+ * and layered with z-index control
+ */
+export const FreestyleItemSchema = z.object({
+  id: z.string().min(1),
+  photoId: z.string(),
+  photoUrl: z.string().nullable().optional(),
+
+  // Transform (all values are percentages of canvas dimensions for responsiveness)
+  x: z.number(), // Position from left (0-100, can exceed bounds slightly)
+  y: z.number(), // Position from top (0-100, can exceed bounds slightly)
+  width: z.number().positive(), // Width as percentage of canvas
+  height: z.number().positive(), // Height as percentage of canvas
+  rotation: z.number(), // Degrees (0-360, free rotation)
+
+  // Layering
+  zIndex: z.number().int(), // Stack order (higher = on top)
+
+  // Optional filters (reuse existing filter system)
+  filters: PhotoFilterValuesSchema.optional(),
+  filterPreset: FilterPresetNameSchema.optional(),
+});
+
+export type FreestyleItem = z.infer<typeof FreestyleItemSchema>;
+
+// =============================================================================
 // Page Slots
 // =============================================================================
 
@@ -325,15 +356,25 @@ export type PageSlot = z.infer<typeof PageSlotSchema>;
 
 /**
  * Album page
+ * Supports both template-based layouts (using slots) and freestyle canvas (using freestyleItems)
+ * When layoutId is 'freestyle', the page uses freestyleItems instead of slots
  */
 export const AlbumPageSchema = z.object({
   id: z.string().min(1),
-  layoutId: z.string().min(1),
+  layoutId: z.string().min(1), // 'freestyle' for freestyle canvas mode
   background: z.string(),
   slots: z.array(PageSlotSchema),
+  freestyleItems: z.array(FreestyleItemSchema).optional(), // Used when layoutId === 'freestyle'
 });
 
 export type AlbumPage = z.infer<typeof AlbumPageSchema>;
+
+/**
+ * Check if a page is in freestyle mode
+ */
+export function isFreestylePage(page: AlbumPage): boolean {
+  return page.layoutId === 'freestyle';
+}
 
 // =============================================================================
 // Album
@@ -362,6 +403,7 @@ export const FullAlbumUpdateSchema = z.object({
     layoutId: z.string().min(1),
     background: z.string(),
     slots: z.array(PageSlotSchema),
+    freestyleItems: z.array(FreestyleItemSchema).optional(),
   })).optional(),
 });
 
@@ -411,6 +453,13 @@ export const FirestorePageSlotDataSchema = PageSlotSchema;
 export type FirestorePageSlotData = z.infer<typeof FirestorePageSlotDataSchema>;
 
 /**
+ * Firestore freestyle item data schema
+ */
+export const FirestoreFreestyleItemDataSchema = FreestyleItemSchema;
+
+export type FirestoreFreestyleItemData = z.infer<typeof FirestoreFreestyleItemDataSchema>;
+
+/**
  * Firestore album page data schema (without id being optional)
  */
 export const FirestoreAlbumPageDataSchema = z.object({
@@ -419,6 +468,7 @@ export const FirestoreAlbumPageDataSchema = z.object({
   background: z.string(),
   order: z.number().int().min(0),
   slots: z.array(FirestorePageSlotDataSchema),
+  freestyleItems: z.array(FirestoreFreestyleItemDataSchema).optional(),
 });
 
 export type FirestoreAlbumPageData = z.infer<typeof FirestoreAlbumPageDataSchema>;
@@ -448,7 +498,7 @@ export const ViewModeSchema = z.enum(['book', 'edit']);
 export type ViewMode = z.infer<typeof ViewModeSchema>;
 
 /**
- * Selected slot reference
+ * Selected slot reference (for template-based layouts)
  */
 export const SelectedSlotRefSchema = z.object({
   pageIndex: z.number().int().min(0),
@@ -456,6 +506,16 @@ export const SelectedSlotRefSchema = z.object({
 });
 
 export type SelectedSlotRef = z.infer<typeof SelectedSlotRefSchema>;
+
+/**
+ * Selected freestyle item reference (for freestyle canvas)
+ */
+export const SelectedFreestyleItemRefSchema = z.object({
+  pageIndex: z.number().int().min(0),
+  itemId: z.string().min(1),
+});
+
+export type SelectedFreestyleItemRef = z.infer<typeof SelectedFreestyleItemRefSchema>;
 
 /**
  * Spread info for book view
@@ -479,6 +539,7 @@ export const AlbumStateSchema = z.object({
   albums: z.array(AlbumSummarySchema),
   albumsStatus: z.enum(['idle', 'loading', 'succeeded', 'failed']),
   selectedSlot: SelectedSlotRefSchema.nullable(),
+  selectedFreestyleItem: SelectedFreestyleItemRefSchema.nullable(),
   viewMode: ViewModeSchema,
   currentSpread: z.number().int().min(0),
   status: z.enum(['idle', 'loading', 'succeeded', 'failed']),
@@ -568,6 +629,7 @@ export function firestorePageToApi(page: FirestoreAlbumPage): AlbumPage {
       ...slot,
       photoUrl: slot.photoUrl ?? null
     })),
+    freestyleItems: page.freestyleItems,
   };
 }
 

@@ -17,11 +17,13 @@ import type {
   UpdateSlotRotationPayload,
   PageSlot,
   SelectedSlotRef,
+  SelectedFreestyleItemRef,
   LayoutTemplateRefs,
   ViewMode,
   SpreadInfo,
   PhotoFilterValues,
   FilterPresetName,
+  FreestyleItem,
 } from '@/types';
 import { DEFAULT_FILTER_VALUES, FILTER_PRESETS } from '@/types';
 import { api, API_ENDPOINTS } from '@/services/apiClient';
@@ -76,6 +78,7 @@ export const ALBUM_SIZE_PRESETS: AlbumSizePresets = {
 
 // Layout templates (basic slot counts)
 export const LAYOUT_TEMPLATES: LayoutTemplateRefs = {
+  freestyle: { name: 'Freestyle Canvas', slots: 0 },
   single: { name: 'Single Photo', slots: 1 },
   'single-margin': { name: 'Single (Margin)', slots: 1 },
   '2-horizontal': { name: '2 Horizontal', slots: 2 },
@@ -123,6 +126,7 @@ const initialState: AlbumState = {
   albums: [],
   albumsStatus: 'idle',
   selectedSlot: null,
+  selectedFreestyleItem: null,
   viewMode: 'book',
   currentSpread: 0,
   status: 'idle',
@@ -222,6 +226,7 @@ export const saveAlbum = createAsyncThunk<
           layoutId: page.layoutId,
           background: page.background,
           slots: page.slots,
+          freestyleItems: page.freestyleItems,
         })),
       },
       { authenticated: true }
@@ -339,13 +344,28 @@ const albumSlice = createSlice({
       if (state.album.pages[pageIndex]) {
         const page = state.album.pages[pageIndex];
         const oldSlots = page.slots;
+        const wasFreestyle = page.layoutId === 'freestyle';
+        const isFreestyle = layoutId === 'freestyle';
+
         page.layoutId = layoutId;
-        page.slots = createSlots(layoutId);
-        // Try to preserve existing photos
-        for (let i = 0; i < Math.min(oldSlots.length, page.slots.length); i++) {
-          if (oldSlots[i].photoId) {
-            page.slots[i].photoId = oldSlots[i].photoId;
+
+        if (isFreestyle) {
+          // Switching to freestyle mode
+          page.slots = [];
+          page.freestyleItems = page.freestyleItems || [];
+          state.selectedSlot = null;
+        } else {
+          // Switching to template mode
+          page.slots = createSlots(layoutId);
+          // Try to preserve existing photos from old slots
+          if (!wasFreestyle) {
+            for (let i = 0; i < Math.min(oldSlots.length, page.slots.length); i++) {
+              if (oldSlots[i].photoId) {
+                page.slots[i].photoId = oldSlots[i].photoId;
+              }
+            }
           }
+          state.selectedFreestyleItem = null;
         }
       }
     },
@@ -455,11 +475,231 @@ const albumSlice = createSlice({
 
     selectSlot: (state, action: PayloadAction<SelectedSlotRef | null>) => {
       state.selectedSlot = action.payload;
+      state.selectedFreestyleItem = null; // Clear freestyle selection when selecting a slot
+    },
+
+    // ============================================
+    // Freestyle Canvas Actions
+    // ============================================
+
+    selectFreestyleItem: (state, action: PayloadAction<SelectedFreestyleItemRef | null>) => {
+      state.selectedFreestyleItem = action.payload;
+      state.selectedSlot = null; // Clear slot selection when selecting freestyle item
+    },
+
+    addFreestyleItem: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        item: FreestyleItem;
+      }>
+    ) => {
+      const { pageIndex, item } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page && page.layoutId === 'freestyle') {
+        if (!page.freestyleItems) {
+          page.freestyleItems = [];
+        }
+        page.freestyleItems.push(item);
+        // Auto-select the new item
+        state.selectedFreestyleItem = { pageIndex, itemId: item.id };
+        state.selectedSlot = null;
+      }
+    },
+
+    updateFreestyleItem: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+        updates: Partial<FreestyleItem>;
+      }>
+    ) => {
+      const { pageIndex, itemId, updates } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const itemIndex = page.freestyleItems.findIndex((item) => item.id === itemId);
+        if (itemIndex !== -1) {
+          page.freestyleItems[itemIndex] = {
+            ...page.freestyleItems[itemIndex],
+            ...updates,
+          };
+        }
+      }
+    },
+
+    removeFreestyleItem: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+      }>
+    ) => {
+      const { pageIndex, itemId } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        page.freestyleItems = page.freestyleItems.filter((item) => item.id !== itemId);
+        // Clear selection if the removed item was selected
+        if (state.selectedFreestyleItem?.itemId === itemId) {
+          state.selectedFreestyleItem = null;
+        }
+      }
+    },
+
+    bringFreestyleItemToFront: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+      }>
+    ) => {
+      const { pageIndex, itemId } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const maxZIndex = Math.max(...page.freestyleItems.map((item) => item.zIndex), 0);
+        const itemIndex = page.freestyleItems.findIndex((item) => item.id === itemId);
+        if (itemIndex !== -1) {
+          page.freestyleItems[itemIndex].zIndex = maxZIndex + 1;
+        }
+      }
+    },
+
+    sendFreestyleItemToBack: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+      }>
+    ) => {
+      const { pageIndex, itemId } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const minZIndex = Math.min(...page.freestyleItems.map((item) => item.zIndex), 0);
+        const itemIndex = page.freestyleItems.findIndex((item) => item.id === itemId);
+        if (itemIndex !== -1) {
+          page.freestyleItems[itemIndex].zIndex = minZIndex - 1;
+        }
+      }
+    },
+
+    bringFreestyleItemForward: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+      }>
+    ) => {
+      const { pageIndex, itemId } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const item = page.freestyleItems.find((i) => i.id === itemId);
+        if (item) {
+          // Find items with zIndex just above this one
+          const itemsAbove = page.freestyleItems
+            .filter((i) => i.zIndex > item.zIndex)
+            .sort((a, b) => a.zIndex - b.zIndex);
+          if (itemsAbove.length > 0) {
+            // Swap zIndex with the item immediately above
+            const itemAbove = itemsAbove[0];
+            const tempZIndex = item.zIndex;
+            item.zIndex = itemAbove.zIndex;
+            itemAbove.zIndex = tempZIndex;
+          }
+        }
+      }
+    },
+
+    sendFreestyleItemBackward: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+      }>
+    ) => {
+      const { pageIndex, itemId } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const item = page.freestyleItems.find((i) => i.id === itemId);
+        if (item) {
+          // Find items with zIndex just below this one
+          const itemsBelow = page.freestyleItems
+            .filter((i) => i.zIndex < item.zIndex)
+            .sort((a, b) => b.zIndex - a.zIndex);
+          if (itemsBelow.length > 0) {
+            // Swap zIndex with the item immediately below
+            const itemBelow = itemsBelow[0];
+            const tempZIndex = item.zIndex;
+            item.zIndex = itemBelow.zIndex;
+            itemBelow.zIndex = tempZIndex;
+          }
+        }
+      }
+    },
+
+    updateFreestyleItemFilters: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+        filters: Partial<PhotoFilterValues>;
+      }>
+    ) => {
+      const { pageIndex, itemId, filters } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const item = page.freestyleItems.find((i) => i.id === itemId);
+        if (item) {
+          const currentFilters = item.filters || { ...DEFAULT_FILTER_VALUES };
+          item.filters = { ...currentFilters, ...filters };
+          item.filterPreset = undefined;
+        }
+      }
+    },
+
+    setFreestyleItemFilterPreset: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+        preset: FilterPresetName;
+      }>
+    ) => {
+      const { pageIndex, itemId, preset } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const item = page.freestyleItems.find((i) => i.id === itemId);
+        if (item) {
+          const presetData = FILTER_PRESETS.find((p) => p.name === preset);
+          if (presetData) {
+            item.filters = { ...presetData.values };
+            item.filterPreset = preset;
+          }
+        }
+      }
+    },
+
+    resetFreestyleItemFilters: (
+      state,
+      action: PayloadAction<{
+        pageIndex: number;
+        itemId: string;
+      }>
+    ) => {
+      const { pageIndex, itemId } = action.payload;
+      const page = state.album.pages[pageIndex];
+      if (page?.freestyleItems) {
+        const item = page.freestyleItems.find((i) => i.id === itemId);
+        if (item) {
+          item.filters = { ...DEFAULT_FILTER_VALUES };
+          item.filterPreset = 'none';
+        }
+      }
     },
 
     clearAlbum: (state) => {
       state.album = initialState.album;
       state.selectedSlot = null;
+      state.selectedFreestyleItem = null;
       state.viewMode = 'book';
       state.currentSpread = 0;
       state.status = 'idle';
@@ -661,6 +901,19 @@ export const {
   setSlotFilterPreset,
   resetSlotFilters,
   selectSlot,
+  // Freestyle actions
+  selectFreestyleItem,
+  addFreestyleItem,
+  updateFreestyleItem,
+  removeFreestyleItem,
+  bringFreestyleItemToFront,
+  sendFreestyleItemToBack,
+  bringFreestyleItemForward,
+  sendFreestyleItemBackward,
+  updateFreestyleItemFilters,
+  setFreestyleItemFilterPreset,
+  resetFreestyleItemFilters,
+  // Other actions
   clearAlbum,
   setViewMode,
   setCurrentSpread,
@@ -682,6 +935,8 @@ export const selectCurrentPage = (state: RootState): AlbumPage | undefined =>
   state.album.album.pages[state.album.album.currentPageIndex];
 export const selectSelectedSlot = (state: RootState): SelectedSlotRef | null =>
   state.album.selectedSlot;
+export const selectSelectedFreestyleItem = (state: RootState): SelectedFreestyleItemRef | null =>
+  state.album.selectedFreestyleItem;
 export const selectAlbumStatus = (state: RootState): AlbumState['status'] =>
   state.album.status;
 export const selectAlbumError = (state: RootState): string | null => state.album.error;

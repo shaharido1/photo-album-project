@@ -7,6 +7,13 @@ import type { LayoutTemplate, LayoutSlot } from '@/types';
 
 const layoutTemplates: LayoutTemplate[] = [
   {
+    id: 'freestyle',
+    name: 'Freestyle Canvas',
+    description: 'Free-form canvas with layered photos',
+    slotCount: 0,
+    slots: [],
+  },
+  {
     id: 'single',
     name: 'Single Photo',
     description: 'Full page single photo',

@@ -4,8 +4,8 @@
   "description": "Hello World full-stack app with Node.js, React-Redux, and Docker",
   "private": true,
   "scripts": {
-    "clear": "(kill -9 $(lsof -ti:3001) || true)",
-    "dev": "(kill -9 $(lsof -ti:3001) || true) && npm --prefix shared/types run build && npx concurrently -n \"server,client\" -c \"blue,green\" --kill-others \"npm run dev:server\" \"npm run dev:client\"",
+    "clear": "(kill -9 $(lsof -ti:3001) || true) && (kill -9 $(lsof -ti:5173) || true)",
+    "dev": "npm run clear && npm --prefix shared/types run build && npx concurrently -n \"server,client\" -c \"blue,green\" --kill-others \"npm run dev:server\" \"npm run dev:client\"",
     "dev:docker": "docker-compose up",
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",

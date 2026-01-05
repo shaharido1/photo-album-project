@@ -4,7 +4,9 @@ import { getLayoutById } from '@/features/layouts/layoutTemplates';
 import { selectAllPhotos } from '@/features/photos/photosSlice';
 import { editPage } from '@/features/album/albumSlice';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import type { AlbumPage, Photo } from '@/types';
+import { buildFilterString } from './FilterControls';
+import { DEFAULT_FILTER_VALUES } from '@/types';
+import type { AlbumPage, Photo, FreestyleItem } from '@/types';
 
 interface BookPageProps {
   page: AlbumPage;
@@ -107,6 +109,65 @@ function PhotoSlotDisplay({
   );
 }
 
+interface FreestyleItemDisplayProps {
+  item: FreestyleItem;
+  photo: Photo | null;
+  pageWidth: number;
+  pageHeight: number;
+}
+
+function FreestyleItemDisplay({
+  item,
+  photo,
+  pageWidth,
+  pageHeight,
+}: FreestyleItemDisplayProps): JSX.Element {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Calculate item position and size in pixels from percentages
+  const itemX = (item.x / 100) * pageWidth;
+  const itemY = (item.y / 100) * pageHeight;
+  const itemWidth = (item.width / 100) * pageWidth;
+  const itemHeight = (item.height / 100) * pageHeight;
+
+  // Build filter string
+  const filterStyle = buildFilterString(item.filters || DEFAULT_FILTER_VALUES);
+
+  useEffect(() => {
+    const url = photo?.fullSize || photo?.thumbnail || item.photoUrl;
+    if (url) {
+      const img = new Image();
+      img.onload = () => setImageLoaded(true);
+      img.src = url;
+    }
+  }, [photo, item.photoUrl]);
+
+  return (
+    <div
+      className="absolute overflow-hidden"
+      style={{
+        left: itemX,
+        top: itemY,
+        width: itemWidth,
+        height: itemHeight,
+        transform: `rotate(${item.rotation}deg)`,
+        transformOrigin: 'center center',
+        zIndex: item.zIndex,
+      }}
+    >
+      {(photo || item.photoUrl) && imageLoaded && (
+        <img
+          src={photo?.fullSize || photo?.thumbnail || item.photoUrl || ''}
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ filter: filterStyle }}
+          draggable={false}
+        />
+      )}
+    </div>
+  );
+}
+
 export function BookPage({
   page,
   pageIndex,
@@ -139,25 +200,45 @@ export function BookPage({
     >
       {/* Page content */}
       <div className="absolute inset-0">
-        {layout?.slots.map((slotDef, i) => {
-          const slot = page.slots[i];
-          if (!slot) return null;
+        {/* Render template slots for non-freestyle layouts */}
+        {page.layoutId !== 'freestyle' &&
+          layout?.slots.map((slotDef, i) => {
+            const slot = page.slots[i];
+            if (!slot) return null;
 
-          const photo = slot.photoId
-            ? photos.find((p) => p.id === slot.photoId)
-            : null;
+            const photo = slot.photoId
+              ? photos.find((p) => p.id === slot.photoId)
+              : null;
 
-          return (
-            <PhotoSlotDisplay
-              key={slot.id}
-              slot={slot}
-              slotDef={slotDef}
-              photo={photo ?? null}
-              pageWidth={pageWidth}
-              pageHeight={pageHeight}
-            />
-          );
-        })}
+            return (
+              <PhotoSlotDisplay
+                key={slot.id}
+                slot={slot}
+                slotDef={slotDef}
+                photo={photo ?? null}
+                pageWidth={pageWidth}
+                pageHeight={pageHeight}
+              />
+            );
+          })}
+
+        {/* Render freestyle items for freestyle layouts */}
+        {page.layoutId === 'freestyle' &&
+          page.freestyleItems
+            ?.slice()
+            .sort((a, b) => a.zIndex - b.zIndex)
+            .map((item) => {
+              const photo = photos.find((p) => p.id === item.photoId);
+              return (
+                <FreestyleItemDisplay
+                  key={item.id}
+                  item={item}
+                  photo={photo ?? null}
+                  pageWidth={pageWidth}
+                  pageHeight={pageHeight}
+                />
+              );
+            })}
       </div>
 
       {/* Page number */}
