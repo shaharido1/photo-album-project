@@ -49,5 +49,5 @@ export interface IStorageService {
   /**
    * Get the storage type identifier
    */
-  getType(): 'firebase' | 'local';
+  getType(): 'firebase' | 'local' | 'cloudinary';
 }

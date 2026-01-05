@@ -201,7 +201,7 @@ export class FirebaseStorageService implements IStorageService {
   /**
    * Get the storage type
    */
-  getType(): 'firebase' | 'local' {
+  getType(): 'firebase' | 'local' | 'cloudinary' {
     return 'firebase';
   }
 }

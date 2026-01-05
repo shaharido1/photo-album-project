@@ -2,13 +2,16 @@
  * Storage Service Factory
  *
  * Creates the appropriate storage service based on environment configuration.
- * Set USE_LOCAL_STORAGE=true for local filesystem storage (development/testing)
- * Otherwise uses Firebase Storage (production)
+ * Priority:
+ * 1. USE_LOCAL_STORAGE=true -> Local filesystem storage (development/testing)
+ * 2. USE_CLOUDINARY_STORAGE=true -> Cloudinary storage
+ * 3. Default -> Firebase Storage (production)
  */
 
 import type { IStorageService, UploadResult, StorageFile } from './IStorageService.js';
 import { FirebaseStorageService } from './FirebaseStorageService.js';
 import { LocalStorageService } from './LocalStorageService.js';
+import { CloudinaryStorageService } from './CloudinaryStorageService.js';
 
 // Supported image types
 const SUPPORTED_MIME_TYPES = [
@@ -37,11 +40,16 @@ const getStorageServiceInstance = (): IStorageService => {
   }
 
   const useLocalStorage = process.env.USE_LOCAL_STORAGE === 'true';
+  const useCloudinaryStorage = process.env.USE_CLOUDINARY_STORAGE === 'true';
 
   if (useLocalStorage) {
     // eslint-disable-next-line no-console
     console.log('Using local storage service');
     storageServiceInstance = new LocalStorageService();
+  } else if (useCloudinaryStorage) {
+    // eslint-disable-next-line no-console
+    console.log('Using Cloudinary storage service');
+    storageServiceInstance = new CloudinaryStorageService();
   } else {
     // eslint-disable-next-line no-console
     console.log('Using Firebase storage service');
@@ -76,7 +84,7 @@ export const storageService = {
     return getStorageServiceInstance().getStorageDir();
   },
 
-  getType(): 'firebase' | 'local' {
+  getType(): 'firebase' | 'local' | 'cloudinary' {
     return getStorageServiceInstance().getType();
   },
 };
