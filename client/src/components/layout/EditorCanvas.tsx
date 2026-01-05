@@ -30,6 +30,7 @@ import type { PageSlot, LayoutSlot, Photo } from '@/types';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type Konva from 'konva';
 import { buildFilterString } from './FilterControls';
+import { getPhotoUrl } from '@/lib/utils';
 
 type ImageStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
@@ -108,7 +109,7 @@ function PhotoSlot({
   const dispatch = useAppDispatch();
   const shapeRef = useRef<Konva.Image>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const [image] = useImage(photo?.fullSize || photo?.thumbnail || slot.photoUrl || undefined);
+  const [image] = useImage(getPhotoUrl(photo, true) || slot.photoUrl || undefined);
 
   // Get filter string for this slot
   const filterString = slot.filters

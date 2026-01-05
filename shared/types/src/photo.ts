@@ -30,6 +30,10 @@ export const PhotoSchema = z.object({
   aiProcessed: z.boolean().optional(),
   aiProcessedAt: z.string().datetime({ offset: true }).optional(),
   aiProvider: z.string().optional(),
+  // Google Photos integration fields
+  source: z.enum(['upload', 'google']).optional(),
+  storageType: z.enum(['firebase', 'google-reference', 'local']).optional(),
+  googlePhotoId: z.string().optional(),
 });
 
 export type Photo = z.infer<typeof PhotoSchema>;
@@ -118,6 +122,11 @@ export function firestorePhotoToApi(doc: FirestorePhoto, id: string): Photo {
     photo.aiProcessedAt = doc.aiProcessedAt.toDate().toISOString();
   }
   if (doc.aiProvider !== undefined) photo.aiProvider = doc.aiProvider;
+
+  // Include Google Photos fields if present
+  if (doc.source !== undefined) photo.source = doc.source;
+  if (doc.storageType !== undefined) photo.storageType = doc.storageType;
+  if (doc.googlePhotoId !== undefined) photo.googlePhotoId = doc.googlePhotoId;
 
   return photo;
 }

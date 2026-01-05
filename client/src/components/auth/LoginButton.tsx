@@ -13,10 +13,14 @@ import { AuthDialog } from './AuthDialog';
 
 interface LoginButtonProps {
   className?: string;
+  variant?: "link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | null | undefined;
+  children?: React.ReactNode;
 }
 
 export function LoginButton({
   className,
+  variant = "outline",
+  children,
 }: LoginButtonProps): JSX.Element | null {
   const [dialogOpen, setDialogOpen] = useState(false);
   const status = useAppSelector(selectAuthStatus);
@@ -31,7 +35,7 @@ export function LoginButton({
   return (
     <div className={className}>
       <Button
-        variant="outline"
+        variant={variant}
         size="sm"
         onClick={() => setDialogOpen(true)}
         disabled={isLoading}
@@ -61,7 +65,7 @@ export function LoginButton({
             Signing in...
           </>
         ) : (
-          'Sign In'
+          children || 'Sign In'
         )}
       </Button>
       <AuthDialog open={dialogOpen} onOpenChange={setDialogOpen} />

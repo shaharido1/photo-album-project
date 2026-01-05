@@ -33,21 +33,23 @@ export function HomePage(): JSX.Element {
                             <span className="text-primary">keeping forever.</span>
                         </h1>
                         <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed animate-in fade-in duration-1000 delay-200">
-                            Transform your digital gallery into beautifully crafted photo books. 
+                            Transform your digital gallery into beautifully crafted photo books.
                             Professional designs, intuitive editing, and seamless cloud integration.
                         </p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 animate-in fade-in duration-1000 delay-300">
-                        <Button 
-                            size="lg" 
+                        <Button
+                            size="lg"
                             className="h-14 px-10 text-lg rounded-full shadow-2xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:scale-105 active:scale-95 group font-semibold"
                             onClick={() => setIsCreateDialogOpen(true)}
                         >
                             <Plus className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                             Start Your Story
                         </Button>
-                        <LoginButton variant="outline" className="h-14 px-10 text-lg rounded-full border-2 hover:bg-accent transition-all font-semibold" transition="Sign in to save" />
+                        <LoginButton variant="outline" className="h-14 px-10 text-lg rounded-full border-2 hover:bg-accent transition-all font-semibold">
+                            Sign in to save
+                        </LoginButton>
                     </div>
                 </section>
 

@@ -55,6 +55,7 @@ export async function apiFetch<T>(
   options: ApiRequestOptions = {}
 ): Promise<T> {
   const { authenticated = false, headers = {}, body, method = 'GET' } = options;
+  console.log(`[API] Request: ${method} ${endpoint}`, { authenticated, body });
 
   const requestHeaders: HeadersInit = {
     ...headers,
@@ -71,18 +72,26 @@ export async function apiFetch<T>(
     Object.assign(requestHeaders, { 'Content-Type': 'application/json' });
   }
 
-  const response = await fetch(endpoint, {
-    method,
-    headers: requestHeaders,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  try {
+    const response = await fetch(endpoint, {
+      method,
+      headers: requestHeaders,
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as ApiError;
-    throw new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as ApiError;
+      console.error(`[API] Error Response: ${response.status} ${endpoint}`, errorData);
+      throw new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`[API] Success: ${endpoint}`, data);
+    return data as T;
+  } catch (err) {
+    console.error(`[API] Fetch Exception: ${endpoint}`, err);
+    throw err;
   }
-
-  return response.json() as Promise<T>;
 }
 
 /**

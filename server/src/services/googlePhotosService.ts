@@ -17,7 +17,9 @@ import { storageService, type StorageFile } from './storageService.js';
 import { photoService } from './firebaseService.js';
 
 const GOOGLE_PHOTOS_API_BASE = 'https://photoslibrary.googleapis.com/v1';
+const GOOGLE_PICKER_API_BASE = 'https://photospicker.googleapis.com/v1';
 const PAGE_SIZE = 50;
+
 
 /**
  * Make an authenticated request to Google Photos API
@@ -28,6 +30,7 @@ const googlePhotosRequest = async <T>(
   options: RequestInit = {}
 ): Promise<T> => {
   const url = `${GOOGLE_PHOTOS_API_BASE}${endpoint}`;
+  console.log(`[GooglePhotosService] Requesting: ${options.method || 'GET'} ${url}`);
 
   const response = await fetch(url, {
     ...options,
@@ -40,6 +43,9 @@ const googlePhotosRequest = async <T>(
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`[GooglePhotosService] 403 Error Debug - Using Token: ${accessToken.substring(0, 15)}...`);
+    console.error(`[GooglePhotosService] Response Status: ${response.status}`);
+    console.error(`[GooglePhotosService] Response Error: ${errorText}`);
     throw new Error(`Google Photos API error: ${response.status} - ${errorText}`);
   }
 
@@ -62,17 +68,29 @@ const downloadPhoto = async (
     downloadUrl = `${baseUrl}=d`;
   }
 
-  const response = await fetch(downloadUrl, {
+  console.log(`[GooglePhotosService] Downloading photo from: ${downloadUrl}`);
+
+  // Try with token first
+  let response = await fetch(downloadUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
 
+  // If 403/401, retry without token (common for Picker API URLs)
+  if (!response.ok && (response.status === 403 || response.status === 401)) {
+    console.warn(`[GooglePhotosService] Download with token failed (${response.status}), trying WITHOUT token...`);
+    response = await fetch(downloadUrl);
+  }
+
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[GooglePhotosService] Download failed (final): ${response.status} - ${errorText}`);
     throw new Error(`Failed to download photo: ${response.status}`);
   }
 
   const arrayBuffer = await response.arrayBuffer();
+  console.log(`[GooglePhotosService] Download success: ${arrayBuffer.byteLength} bytes`);
   return Buffer.from(arrayBuffer);
 };
 
@@ -159,7 +177,7 @@ export const googlePhotosService = {
 
     let response: GoogleMediaItemsResponse;
 
-    if (albumId) {
+    if (albumId && albumId !== 'picker') {
       const body = {
         albumId,
         pageSize: PAGE_SIZE,
@@ -199,11 +217,11 @@ export const googlePhotosService = {
         mimeType: item.mimeType,
         mediaMetadata: item.mediaMetadata
           ? {
-              creationTime: item.mediaMetadata.creationTime,
-              width: item.mediaMetadata.width,
-              height: item.mediaMetadata.height,
-              photo: item.mediaMetadata.photo,
-            }
+            creationTime: item.mediaMetadata.creationTime,
+            width: item.mediaMetadata.width,
+            height: item.mediaMetadata.height,
+            photo: item.mediaMetadata.photo,
+          }
           : undefined,
         filename: item.filename,
       }));
@@ -256,11 +274,11 @@ export const googlePhotosService = {
       mimeType: item.mimeType,
       mediaMetadata: item.mediaMetadata
         ? {
-            creationTime: item.mediaMetadata.creationTime,
-            width: item.mediaMetadata.width,
-            height: item.mediaMetadata.height,
-            photo: item.mediaMetadata.photo,
-          }
+          creationTime: item.mediaMetadata.creationTime,
+          width: item.mediaMetadata.width,
+          height: item.mediaMetadata.height,
+          photo: item.mediaMetadata.photo,
+        }
         : undefined,
       filename: item.filename,
     };
@@ -272,18 +290,19 @@ export const googlePhotosService = {
   async importPhotos(
     userId: string,
     accessToken: string,
-    photoIds: string[],
+    items: GooglePhotosMediaItem[],
     options: ImportOptions
   ): Promise<{ results: ImportPhotoResult[]; imported: number; failed: number }> {
     const results: ImportPhotoResult[] = [];
     let imported = 0;
     let failed = 0;
 
-    for (const googlePhotoId of photoIds) {
+    for (const mediaItem of items) {
+      const googlePhotoId = mediaItem.id;
       try {
-        const mediaItem = await this.getPhoto(accessToken, googlePhotoId);
+        console.log(`[GooglePhotosService] Importing item: ${mediaItem.filename} (${googlePhotoId})`);
 
-        if (options.storageType === 'firebase') {
+        if (options.storageType === 'firebase' || options.storageType === 'local') {
           const width = mediaItem.mediaMetadata?.width
             ? parseInt(mediaItem.mediaMetadata.width, 10)
             : undefined;
@@ -291,6 +310,7 @@ export const googlePhotosService = {
             ? parseInt(mediaItem.mediaMetadata.height, 10)
             : undefined;
 
+          console.log(`[GooglePhotosService] Storage: ${options.storageType}. Downloading first...`);
           const photoBuffer = await downloadPhoto(
             accessToken,
             mediaItem.baseUrl,
@@ -313,7 +333,7 @@ export const googlePhotosService = {
             width: uploadResult.width,
             height: uploadResult.height,
             source: 'google',
-            storageType: 'firebase',
+            storageType: options.storageType,
             googlePhotoId,
           });
 
@@ -324,6 +344,8 @@ export const googlePhotosService = {
           });
           imported++;
         } else {
+          // google-reference
+          console.log(`[GooglePhotosService] Storage: google-reference.`);
           const width = mediaItem.mediaMetadata?.width
             ? parseInt(mediaItem.mediaMetadata.width, 10)
             : 800;
@@ -354,6 +376,7 @@ export const googlePhotosService = {
           imported++;
         }
       } catch (error) {
+        console.error(`[GooglePhotosService] Failed to import ${mediaItem.filename}:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.push({
           googlePhotoId,
@@ -389,4 +412,158 @@ export const googlePhotosService = {
       fullSizeUrl: `${mediaItem.baseUrl}=w${width}-h${height}`,
     };
   },
+
+  /**
+   * Create a new picker session
+   */
+  async createPickerSession(
+    accessToken: string
+  ): Promise<{ sessionId: string; pickerUri: string }> {
+    const response = await fetch(`${GOOGLE_PICKER_API_BASE}/sessions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google Picker API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = (await response.json()) as { id: string; pickerUri: string };
+    return {
+      sessionId: data.id,
+      pickerUri: data.pickerUri,
+    };
+  },
+
+  /**
+   * Get picker session status
+   */
+  async getPickerSession(
+    accessToken: string,
+    sessionId: string
+  ): Promise<{ ready: boolean }> {
+    const response = await fetch(`${GOOGLE_PICKER_API_BASE}/sessions/${sessionId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google Picker API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = (await response.json()) as { mediaItemsSet: boolean };
+    return {
+      ready: !!data.mediaItemsSet,
+    };
+  },
+
+  /**
+   * List items from a completed picker session
+   */
+  async listPickerItems(
+    accessToken: string,
+    sessionId: string
+  ): Promise<GooglePhotosMediaItem[]> {
+    const response = await fetch(
+      `${GOOGLE_PICKER_API_BASE}/mediaItems?sessionId=${sessionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google Picker API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = (await response.json()) as {
+      mediaItems?: Array<{
+        id: string;
+        baseUrl?: string;
+        mimeType?: string;
+        filename?: string;
+        mediaMetadata?: any;
+        mediaFile?: {
+          baseUrl?: string;
+          filename?: string;
+          mimeType?: string;
+          mediaFileMetadata?: {
+            location?: {
+              latitude: number;
+              longitude: number;
+            };
+          };
+        };
+      }>;
+    };
+
+    return (data.mediaItems || []).map((item) => {
+      // Picker API often puts attributes inside 'mediaFile'
+      const baseUrl = item.mediaFile?.baseUrl || item.baseUrl || '';
+      const filename = item.mediaFile?.filename || item.filename || 'unnamed';
+      const mimeType = item.mediaFile?.mimeType || item.mimeType || 'image/jpeg';
+
+      // Extract metadata (avoid location as it currently causes issues/is not stored)
+      const metadata = item.mediaMetadata || {};
+
+      return {
+        id: item.id,
+        baseUrl,
+        mimeType,
+        filename,
+        mediaMetadata: metadata,
+      };
+    });
+  },
+
+  /**
+   * Proxy an image from Google Photos
+   */
+  async proxyImage(
+    accessToken: string,
+    url: string
+  ): Promise<{ buffer: Buffer; contentType: string }> {
+    console.log(`[GooglePhotosService] Proxying image: ${url}`);
+
+    // First try with the token
+    let response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    // If it fails with 403 or 401, it might be a Google Photos URL that doesn't want the token
+    // (e.g. from the Picker API or already expired session-based URLs)
+    if (!response.ok && (response.status === 403 || response.status === 401)) {
+      console.warn(`[GooglePhotosService] Proxy with token failed (${response.status}), trying WITHOUT token...`);
+      response = await fetch(url);
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GooglePhotosService] Proxy failed (even without token) for URL: ${url}`);
+      console.error(`[GooglePhotosService] Status: ${response.status}, Error: ${errorText}`);
+      throw new Error(`Google returned ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await response.arrayBuffer();
+
+    console.log(`[GooglePhotosService] Proxy success, type: ${contentType}, size: ${arrayBuffer.byteLength}`);
+
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      contentType,
+    };
+  },
 };
+

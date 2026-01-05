@@ -389,6 +389,8 @@ export const AlbumSchema = z.object({
   size: AlbumSizeKeySchema,
   pages: z.array(AlbumPageSchema),
   currentPageIndex: z.number().int().min(0),
+  createdAt: z.string().datetime({ offset: true }).optional(),
+  updatedAt: z.string().datetime({ offset: true }).optional(),
 });
 
 /**
@@ -428,6 +430,8 @@ export const AlbumSummarySchema = AlbumSchema.pick({
   name: true,
   size: true,
   currentPageIndex: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export type AlbumSummary = z.infer<typeof AlbumSummarySchema>;
@@ -646,6 +650,8 @@ export function firestoreAlbumToApi(
     size: doc.size as AlbumSizeKey,
     pages: doc.pages.map(firestorePageToApi),
     currentPageIndex: doc.currentPageIndex,
+    createdAt: doc.createdAt?.toDate().toISOString(),
+    updatedAt: doc.updatedAt?.toDate().toISOString(),
   };
 }
 

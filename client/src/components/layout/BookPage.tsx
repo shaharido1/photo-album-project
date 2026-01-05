@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { buildFilterString } from './FilterControls';
 import { DEFAULT_FILTER_VALUES } from '@/types';
 import type { AlbumPage, Photo, FreestyleItem } from '@/types';
+import { getPhotoUrl } from '@/lib/utils';
 
 interface BookPageProps {
   page: AlbumPage;
@@ -41,7 +42,7 @@ function PhotoSlotDisplay({
 
   // Calculate image display dimensions with aspect ratio fit
   const calculateImageStyle = (): React.CSSProperties => {
-    const url = photo?.fullSize || photo?.thumbnail || slot.photoUrl;
+    const url = getPhotoUrl(photo, true) || slot.photoUrl;
     if (!url || !imageLoaded) {
       return {};
     }
@@ -76,7 +77,7 @@ function PhotoSlotDisplay({
   };
 
   useEffect(() => {
-    const url = photo?.fullSize || photo?.thumbnail || slot.photoUrl;
+    const url = getPhotoUrl(photo, true) || slot.photoUrl;
     if (url) {
       const img = new Image();
       img.onload = () => setImageLoaded(true);
@@ -98,7 +99,7 @@ function PhotoSlotDisplay({
     >
       {(photo || slot.photoUrl) && (
         <img
-          src={photo?.fullSize || photo?.thumbnail || slot.photoUrl || ''}
+          src={getPhotoUrl(photo, true) || slot.photoUrl || ''}
           alt=""
           className="absolute top-0 left-0"
           style={calculateImageStyle()}

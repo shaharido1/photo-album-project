@@ -31,6 +31,12 @@ const DISCONNECT = API_ENDPOINTS.GOOGLE_PHOTOS_DISCONNECT.replace('/api/google-p
 const ALBUMS = API_ENDPOINTS.GOOGLE_PHOTOS_ALBUMS.replace('/api/google-photos', '');
 const PHOTOS = API_ENDPOINTS.GOOGLE_PHOTOS_PHOTOS.replace('/api/google-photos', '');
 const IMPORT = API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT.replace('/api/google-photos', '');
+const PICKER_START = API_ENDPOINTS.GOOGLE_PHOTOS_PICKER_START.replace('/api/google-photos', '');
+const PICKER_STATUS = API_ENDPOINTS.GOOGLE_PHOTOS_PICKER_STATUS.replace('/api/google-photos', '');
+const PROXY_IMAGE = API_ENDPOINTS.GOOGLE_PHOTOS_PROXY_IMAGE.replace('/api/google-photos', '');
+const DEBUG_TOKEN = '/debug/token-info';
+
+
 
 /**
  * GET /api/google-photos/auth/start
@@ -41,12 +47,13 @@ router.get(
   authMiddleware,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
+      console.log(`[GooglePhotosRoute] Starting OAuth for user: ${req.user!.uid}`);
       const authUrl = googleOAuthService.generateAuthUrl(req.user!.uid);
 
       const response: OAuthStartResponse = { authUrl };
       res.json(response);
     } catch (error) {
-      console.error('Error generating OAuth URL:', error);
+      console.error('[GooglePhotosRoute] Error generating OAuth URL:', error);
       res.status(500).json({
         error: error instanceof Error ? error.message : 'Failed to start OAuth flow',
       });
@@ -61,32 +68,37 @@ router.get(
 router.get(AUTH_CALLBACK, async (req, res): Promise<void> => {
   try {
     const { code, state, error } = req.query;
+    console.log(`[GooglePhotosRoute] OAuth callback received. State: ${state}`);
 
     if (error) {
+      console.error(`[GooglePhotosRoute] OAuth error from Google: ${error}`);
       res.redirect(`/?google_photos_error=${encodeURIComponent(String(error))}`);
       return;
     }
 
     if (!code || !state) {
+      console.error('[GooglePhotosRoute] Missing code or state in callback');
       res.redirect('/?google_photos_error=missing_params');
       return;
     }
 
     const userId = googleOAuthService.validateState(String(state));
     if (!userId) {
+      console.error('[GooglePhotosRoute] Invalid or expired state');
       res.redirect('/?google_photos_error=invalid_state');
       return;
     }
 
+    console.log(`[GooglePhotosRoute] Exchanging code for user: ${userId}`);
     await googleOAuthService.exchangeCodeForTokens(
       String(code),
-      userId,
-      'google-photos-user@gmail.com'
+      userId
     );
 
+    console.log(`[GooglePhotosRoute] OAuth success for user: ${userId}`);
     res.redirect('/?google_photos_connected=true');
   } catch (error) {
-    console.error('OAuth callback error:', error);
+    console.error('[GooglePhotosRoute] OAuth callback error:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'OAuth callback failed';
     res.redirect(`/?google_photos_error=${encodeURIComponent(errorMessage)}`);
@@ -244,7 +256,8 @@ router.post(
         return;
       }
 
-      const { photoIds, options } = parseResult.data;
+      const { items, options } = parseResult.data;
+      console.log(`[GooglePhotosRoute] Importing ${items.length} photos for user ${req.user!.uid}`);
 
       const accessToken = await googleOAuthService.getValidAccessToken(
         req.user!.uid
@@ -253,9 +266,11 @@ router.post(
       const result = await googlePhotosService.importPhotos(
         req.user!.uid,
         accessToken,
-        photoIds,
+        items,
         options
       );
+
+      console.log(`[GooglePhotosRoute] Import complete. Success: ${result.imported}, Failed: ${result.failed}`);
 
       const response: ImportPhotosResponse = {
         results: result.results,
@@ -265,7 +280,7 @@ router.post(
 
       res.json(response);
     } catch (error) {
-      console.error('Error importing photos:', error);
+      console.error('[GooglePhotosRoute] Error importing photos:', error);
 
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to import photos';
@@ -280,4 +295,148 @@ router.post(
   }
 );
 
+/**
+ * GET /api/google-photos/debug/token-info
+ * Debug endpoint to check current access token info and scopes
+ */
+router.get(
+  DEBUG_TOKEN,
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const accessToken = await googleOAuthService.getValidAccessToken(
+        req.user!.uid
+      );
+
+      const tokenInfoResponse = await fetch(
+        `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`
+      );
+
+      const tokenInfo = (await tokenInfoResponse.json()) as {
+        scope?: string;
+        [key: string]: any;
+      };
+
+      res.json({
+        tokenInfo,
+        expectedScopes: [
+          'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
+          'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+        ],
+        hasRequiredScopes:
+          tokenInfo.scope &&
+          tokenInfo.scope.includes(
+            'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata'
+          ) &&
+          tokenInfo.scope.includes(
+            'https://www.googleapis.com/auth/photospicker.mediaitems.readonly'
+          ),
+      });
+
+    } catch (error) {
+      console.error('Error fetching token info:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to fetch token info',
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/google-photos/picker/start
+ * Start a Google Photos Picker session
+ */
+router.post(
+  PICKER_START,
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const accessToken = await googleOAuthService.getValidAccessToken(req.user!.uid);
+      const session = await googlePhotosService.createPickerSession(accessToken);
+      res.json(session);
+    } catch (error) {
+      console.error('Error starting picker session:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to start picker session',
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/google-photos/picker/status
+ * Check picker session status and list items if ready
+ */
+router.get(
+  PICKER_STATUS,
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const { sessionId } = req.query;
+
+      if (!sessionId) {
+        res.status(400).json({ error: 'Missing sessionId' });
+        return;
+      }
+
+      const accessToken = await googleOAuthService.getValidAccessToken(req.user!.uid);
+      const status = await googlePhotosService.getPickerSession(
+        accessToken,
+        String(sessionId)
+      );
+
+      if (status.ready) {
+        const items = await googlePhotosService.listPickerItems(
+          accessToken,
+          String(sessionId)
+        );
+        res.json({ ready: true, items });
+      } else {
+        res.json({ ready: false });
+      }
+    } catch (error) {
+      console.error('Error checking picker status:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to check picker status',
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/google-photos/proxy-image
+ * Proxy an image from Google Photos to avoid CORs/403 errors
+ */
+router.get(
+  PROXY_IMAGE,
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const { url } = req.query;
+
+      if (!url) {
+        res.status(400).json({ error: 'Missing url parameter' });
+        return;
+      }
+
+      console.log(`[GooglePhotosRoute] Proxying URL: ${url}`);
+
+      const accessToken = await googleOAuthService.getValidAccessToken(req.user!.uid);
+      const { buffer, contentType } = await googlePhotosService.proxyImage(
+        accessToken,
+        String(url)
+      );
+
+      res.setHeader('Content-Type', contentType);
+      res.send(buffer);
+    } catch (error) {
+      console.error('[GooglePhotosRoute] Error proxying image:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to proxy image',
+      });
+    }
+  }
+);
+
 export default router;
+

@@ -44,7 +44,13 @@ interface GooglePhotosState {
 
   // Dialog
   isDialogOpen: boolean;
+
+  // Picker
+  pickerSessionId: string | null;
+  pickerStatus: 'idle' | 'creating' | 'polling' | 'succeeded' | 'failed';
+  pickerError: string | null;
 }
+
 
 const initialState: GooglePhotosState = {
   isConnected: false,
@@ -70,7 +76,12 @@ const initialState: GooglePhotosState = {
   importProgress: null,
 
   isDialogOpen: false,
+
+  pickerSessionId: null,
+  pickerStatus: 'idle',
+  pickerError: null,
 };
+
 
 // Check connection status
 export const checkGooglePhotosStatus = createAsyncThunk<GooglePhotosStatusResponse>(
@@ -136,16 +147,51 @@ export const fetchGooglePhotosPhotos = createAsyncThunk<
   });
 });
 
+// Start Picker Session
+export const startGooglePhotosPicker = createAsyncThunk<{
+  sessionId: string;
+  pickerUri: string;
+}>('googlePhotos/startPicker', async () => {
+  return await api.post<{ sessionId: string; pickerUri: string }>(
+    API_ENDPOINTS.GOOGLE_PHOTOS_PICKER_START,
+    {},
+    { authenticated: true }
+  );
+});
+
+// Check Picker Status
+export const checkGooglePhotosPickerStatus = createAsyncThunk<
+  { ready: boolean; items?: GooglePhotosMediaItem[] },
+  string
+>('googlePhotos/checkPickerStatus', async (sessionId, { dispatch }) => {
+  const response = await api.get<{ ready: boolean; items?: GooglePhotosMediaItem[] }>(
+    `${API_ENDPOINTS.GOOGLE_PHOTOS_PICKER_STATUS}?sessionId=${sessionId}`,
+    { authenticated: true }
+  );
+
+  if (response.ready && response.items && response.items.length > 0) {
+    void dispatch(
+      importGooglePhotos({
+        items: response.items,
+        options: { storageType: 'local' }, // Default to local storage for now
+      })
+    );
+  }
+
+  return response;
+});
+
+
 // Import selected photos
 export const importGooglePhotos = createAsyncThunk<
   ImportPhotosResponse,
-  { photoIds: string[]; options: ImportOptions },
+  { items: GooglePhotosMediaItem[]; options: ImportOptions },
   { rejectValue: string }
->('googlePhotos/importPhotos', async ({ photoIds, options }, { dispatch, rejectWithValue }) => {
+>('googlePhotos/importPhotos', async ({ items, options }, { dispatch, rejectWithValue }) => {
   try {
     const response = await api.post<ImportPhotosResponse>(
       API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT,
-      { photoIds, options },
+      { items, options },
       { authenticated: true }
     );
 
@@ -209,6 +255,11 @@ const googlePhotosSlice = createSlice({
       state.importStatus = 'idle';
       state.importError = null;
       state.importProgress = null;
+    },
+    resetPickerState: (state) => {
+      state.pickerStatus = 'idle';
+      state.pickerSessionId = null;
+      state.pickerError = null;
     },
     setConnectedFromCallback: (state) => {
       // Called when OAuth callback succeeds
@@ -297,7 +348,7 @@ const googlePhotosSlice = createSlice({
         state.importProgress = {
           imported: 0,
           failed: 0,
-          total: action.meta.arg.photoIds.length,
+          total: action.meta.arg.items.length,
         };
       })
       .addCase(importGooglePhotos.fulfilled, (state, action) => {
@@ -314,12 +365,47 @@ const googlePhotosSlice = createSlice({
         state.importStatus = 'failed';
         state.importError = (action.payload as string) ?? 'Import failed';
       })
+
+      // Start Picker
+      .addCase(startGooglePhotosPicker.pending, (state) => {
+        state.pickerStatus = 'creating';
+        state.pickerError = null;
+      })
+      .addCase(startGooglePhotosPicker.fulfilled, (state, action) => {
+        state.pickerStatus = 'polling';
+        state.pickerSessionId = action.payload.sessionId;
+        // Open the picker URI in a new window
+        window.open(action.payload.pickerUri + '/autoclose', '_blank', 'width=800,height=600');
+      })
+      .addCase(startGooglePhotosPicker.rejected, (state, action) => {
+        state.pickerStatus = 'failed';
+        state.pickerError = action.error.message ?? 'Failed to start picker';
+      })
+
+      // Check Picker Status
+      .addCase(checkGooglePhotosPickerStatus.fulfilled, (state, action) => {
+        if (action.payload.ready && action.payload.items) {
+          state.pickerStatus = 'succeeded';
+          state.photos = action.payload.items;
+          state.photosStatus = 'succeeded';
+          state.selectedAlbumId = 'picker'; // Mark as picker results
+          // We'll handle the auto-import in a middleware or a separate action
+          // because we shouldn't dispatch from an extraReducer.
+          // Wait, I can actually just dispatch it from the thunk itself!
+        }
+      })
+      .addCase(checkGooglePhotosPickerStatus.rejected, (state, action) => {
+        state.pickerStatus = 'failed';
+        state.pickerError = action.error.message ?? 'Failed to check picker status';
+      })
+
       // Clear state on sign out
       .addCase(signOut.fulfilled, () => {
         return initialState;
       });
   },
 });
+
 
 export const {
   openDialog,
@@ -329,8 +415,10 @@ export const {
   selectAllPhotos,
   clearPhotoSelection,
   resetImportState,
+  resetPickerState,
   setConnectedFromCallback,
 } = googlePhotosSlice.actions;
+
 
 // Selectors
 export const selectGooglePhotosIsConnected = (state: RootState) => state.googlePhotos.isConnected;
@@ -349,10 +437,16 @@ export const selectGooglePhotosSelectedPhotoIds = (state: RootState) =>
 export const selectGooglePhotosImportStatus = (state: RootState) => state.googlePhotos.importStatus;
 export const selectGooglePhotosImportProgress = (state: RootState) =>
   state.googlePhotos.importProgress;
+export const selectGooglePhotosImportError = (state: RootState) => state.googlePhotos.importError;
 export const selectGooglePhotosIsDialogOpen = (state: RootState) => state.googlePhotos.isDialogOpen;
 export const selectGooglePhotosHasMoreAlbums = (state: RootState) =>
   state.googlePhotos.albumsNextPageToken !== null;
 export const selectGooglePhotosHasMorePhotos = (state: RootState) =>
   state.googlePhotos.photosNextPageToken !== null;
+
+export const selectGooglePhotosPickerStatus = (state: RootState) => state.googlePhotos.pickerStatus;
+export const selectGooglePhotosPickerSessionId = (state: RootState) =>
+  state.googlePhotos.pickerSessionId;
+
 
 export default googlePhotosSlice.reducer;

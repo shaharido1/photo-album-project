@@ -50,9 +50,17 @@ export const authMiddleware = async (
         name: 'Test User',
       };
     }
-    // Check for Bearer dev-token: prefix
-    else if (authHeader?.startsWith('Bearer dev-token:')) {
+    // Check for Bearer dev-token: prefix or query param dev-token:
+    const queryToken = req.query.token as string;
+    if (authHeader?.startsWith('Bearer dev-token:')) {
       const uid = authHeader.substring(17);
+      mockUser = {
+        uid,
+        email: 'dev@example.com',
+        name: 'Dev User',
+      };
+    } else if (queryToken?.startsWith('dev-token:')) {
+      const uid = queryToken.substring(10);
       mockUser = {
         uid,
         email: 'dev@example.com',
@@ -84,12 +92,15 @@ export const authMiddleware = async (
     }
   }
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ') && !req.query.token) {
+    console.warn(`[AuthMiddleware] No token provided (header or query) for ${req.method} ${req.url}`);
     res.status(401).json({ error: 'No token provided' });
     return;
   }
 
-  const token = authHeader.substring(7);
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.substring(7)
+    : (req.query.token as string);
 
   try {
     const decodedToken = await getAuth().verifyIdToken(token);
@@ -109,7 +120,7 @@ export const authMiddleware = async (
     next();
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('Auth error:', error);
+    console.error(`[AuthMiddleware] Invalid token for ${req.method} ${req.url}:`, error);
     res.status(401).json({ error: 'Invalid token' });
   }
 };

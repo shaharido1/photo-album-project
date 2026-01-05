@@ -115,7 +115,7 @@ export const photoService = {
     userId: string,
     photo: Omit<Photo, 'id' | 'createdAt'> & {
       source?: 'upload' | 'google';
-      storageType?: 'firebase' | 'google-reference';
+      storageType?: 'firebase' | 'google-reference' | 'local';
       googlePhotoId?: string;
       googlePhotoUrl?: string;
     }

@@ -8,14 +8,25 @@
  * - Encrypts/decrypts refresh tokens for secure storage
  */
 
-import { google } from 'googleapis';
+import googleapis from 'googleapis';
+const { google } = googleapis;
 import crypto from 'crypto';
 import { getFirestore } from '../config/firebase.js';
 import type { FirestoreGooglePhotosAuth } from '@photo-album/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // OAuth configuration
-const GOOGLE_PHOTOS_SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly';
+const GOOGLE_PHOTOS_SCOPES = [
+  'https://www.googleapis.com/auth/photoslibrary.readonly',
+  'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
+  'https://www.googleapis.com/auth/photoslibrary.sharing',
+  'https://www.googleapis.com/auth/photospicker.mediaitems.readonly',
+  'email',
+  'profile',
+  'openid',
+];
+
+
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 
@@ -131,7 +142,8 @@ export const googleOAuthService = {
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: [GOOGLE_PHOTOS_SCOPE],
+      scope: GOOGLE_PHOTOS_SCOPES,
+
       state,
       prompt: 'consent',
     });
@@ -162,20 +174,30 @@ export const googleOAuthService = {
   /**
    * Exchange authorization code for tokens and store them
    */
-  async exchangeCodeForTokens(
-    code: string,
-    userId: string,
-    googleEmail: string
-  ): Promise<void> {
+  async exchangeCodeForTokens(code: string, userId: string): Promise<void> {
     const oauth2Client = getOAuth2Client();
 
     const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
 
     if (!tokens.refresh_token) {
       throw new Error(
         'No refresh token received. User may need to revoke access and re-authorize.'
       );
     }
+
+    // Attempt to get user email
+    let googleEmail = 'unknown@gmail.com';
+    try {
+      const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+      const userInfo = await oauth2.userinfo.get();
+      if (userInfo.data.email) {
+        googleEmail = userInfo.data.email;
+      }
+    } catch (error) {
+      console.warn('Failed to fetch Google user info:', error);
+    }
+
 
     const encryptedRefreshToken = encrypt(tokens.refresh_token);
 
@@ -188,7 +210,8 @@ export const googleOAuthService = {
     } = {
       userId,
       encryptedRefreshToken,
-      scopes: [GOOGLE_PHOTOS_SCOPE],
+      scopes: GOOGLE_PHOTOS_SCOPES,
+
       googleEmail,
       connectedAt: Timestamp.now(),
       lastUsedAt: Timestamp.now(),
@@ -217,9 +240,11 @@ export const googleOAuthService = {
       refresh_token: refreshToken,
     });
 
+    console.log(`[GoogleOAuthService] Refreshing access token for user: ${userId}`);
     const { credentials } = await oauth2Client.refreshAccessToken();
 
     if (!credentials.access_token) {
+      console.error(`[GoogleOAuthService] Failed to refresh access token for user: ${userId}`);
       throw new Error('Failed to refresh access token');
     }
 

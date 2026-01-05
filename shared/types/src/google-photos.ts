@@ -41,6 +41,12 @@ export const GooglePhotosMediaMetadataSchema = z.object({
       exposureTime: z.string().optional(),
     })
     .optional(),
+  location: z
+    .object({
+      latitude: z.number(),
+      longitude: z.number(),
+    })
+    .optional(),
 });
 
 export type GooglePhotosMediaMetadata = z.infer<typeof GooglePhotosMediaMetadataSchema>;
@@ -102,7 +108,7 @@ export type GooglePhotosStatusResponse = z.infer<typeof GooglePhotosStatusRespon
 /**
  * Storage type for imported photos
  */
-export const PhotoStorageTypeSchema = z.enum(['firebase', 'google-reference']);
+export const PhotoStorageTypeSchema = z.enum(['firebase', 'google-reference', 'local']);
 export type PhotoStorageType = z.infer<typeof PhotoStorageTypeSchema>;
 
 /**
@@ -124,7 +130,7 @@ export type ImportOptions = z.infer<typeof ImportOptionsSchema>;
  * Request to import photos
  */
 export const ImportPhotosRequestSchema = z.object({
-  photoIds: z.array(z.string()).min(1).max(50),
+  items: z.array(GooglePhotosMediaItemSchema).min(1).max(50),
   options: ImportOptionsSchema,
 });
 
@@ -197,3 +203,37 @@ export interface GooglePhotoExtension {
   googlePhotoUrl?: string; // For reference storage type
   googlePhotoUrlExpiry?: TimestampLike; // When the URL expires
 }
+// =============================================================================
+// Picker API Types (New in 2025/2026)
+// =============================================================================
+
+/**
+ * Google Photos Picker Session
+ */
+export const GooglePhotosPickerSessionSchema = z.object({
+  id: z.string(),
+  pickerUri: z.string().url(),
+  mediaItemsSet: z.boolean(),
+});
+
+export type GooglePhotosPickerSession = z.infer<typeof GooglePhotosPickerSessionSchema>;
+
+/**
+ * Picker session create response
+ */
+export const PickerSessionResponseSchema = z.object({
+  sessionId: z.string(),
+  pickerUri: z.string().url(),
+});
+
+export type PickerSessionResponse = z.infer<typeof PickerSessionResponseSchema>;
+
+/**
+ * Picker session status response
+ */
+export const PickerSessionStatusSchema = z.object({
+  ready: z.boolean(), // mediaItemsSet
+  mediaCount: z.number().optional(),
+});
+
+export type PickerSessionStatus = z.infer<typeof PickerSessionStatusSchema>;

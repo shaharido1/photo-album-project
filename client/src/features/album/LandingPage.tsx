@@ -11,13 +11,9 @@ import {
 } from '@/features/album/albumSlice';
 import { selectIsAuthenticated, selectUser } from '@/features/auth/authSlice';
 import {
-    selectGooglePhotosIsConnected,
-    checkGooglePhotosStatus,
-    openDialog,
-    startGooglePhotosAuth
+    checkGooglePhotosStatus
 } from '@/features/googlePhotos/googlePhotosSlice';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
-import { GooglePhotosDialog } from '@/features/googlePhotos/GooglePhotosDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -27,8 +23,6 @@ export function LandingPage(): JSX.Element {
     const status = useAppSelector(selectAlbumsStatus);
     const isAuthenticated = useAppSelector(selectIsAuthenticated);
     const user = useAppSelector(selectUser);
-    const isGoogleConnected = useAppSelector(selectGooglePhotosIsConnected);
-
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
     useEffect(() => {
@@ -42,15 +36,7 @@ export function LandingPage(): JSX.Element {
         dispatch(fetchAlbum(albumId));
     };
 
-    const handleGooglePhotosAction = () => {
-        if (isAuthenticated) {
-            if (isGoogleConnected) {
-                dispatch(openDialog());
-            } else {
-                dispatch(startGooglePhotosAuth());
-            }
-        }
-    };
+
 
     return (
         <div className="flex-1 overflow-y-auto bg-background p-8">
@@ -71,7 +57,7 @@ export function LandingPage(): JSX.Element {
                     )}
                 </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Create New Album Card */}
                     <Card
                         className="group relative overflow-hidden border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer flex flex-col items-center justify-center p-8 text-center"
@@ -92,34 +78,6 @@ export function LandingPage(): JSX.Element {
                             </div>
                             <CardTitle className="text-lg">Smart Layouts</CardTitle>
                             <CardDescription>Pro-designed templates for any number of photos.</CardDescription>
-                        </CardHeader>
-                    </Card>
-
-                    <Card
-                        className={cn(
-                            "group relative overflow-hidden transition-all cursor-pointer border-none",
-                            isGoogleConnected ? "bg-green-500/5 hover:bg-green-500/10" : "bg-muted/30 hover:bg-muted/40"
-                        )}
-                        onClick={handleGooglePhotosAction}
-                    >
-                        <CardHeader>
-                            <div className={cn(
-                                "w-10 h-10 rounded-lg flex items-center justify-center mb-2",
-                                isGoogleConnected ? "bg-green-500/10" : "bg-orange-500/10"
-                            )}>
-                                <ImageIcon className={cn(
-                                    "h-5 w-5",
-                                    isGoogleConnected ? "text-green-600" : "text-orange-600"
-                                )} />
-                            </div>
-                            <CardTitle className="text-lg">
-                                {isGoogleConnected ? "Import Photos" : "Google Photos"}
-                            </CardTitle>
-                            <CardDescription>
-                                {isGoogleConnected
-                                    ? "Your Google library is connected. Import more photos."
-                                    : "Directly import your library with one click."}
-                            </CardDescription>
                         </CardHeader>
                     </Card>
                 </div>
@@ -188,7 +146,6 @@ export function LandingPage(): JSX.Element {
                 open={isCreateDialogOpen}
                 onOpenChange={setIsCreateDialogOpen}
             />
-            <GooglePhotosDialog />
         </div>
     );
 }
