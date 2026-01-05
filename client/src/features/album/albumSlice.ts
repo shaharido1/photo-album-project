@@ -127,7 +127,7 @@ const initialState: AlbumState = {
   albumsStatus: 'idle',
   selectedSlot: null,
   selectedFreestyleItem: null,
-  viewMode: 'book',
+  viewMode: 'edit',
   currentSpread: 0,
   status: 'idle',
   error: null,
@@ -319,6 +319,9 @@ const albumSlice = createSlice({
     addPage: (state, action: PayloadAction<string | undefined>) => {
       const layoutId = action.payload || 'single';
       state.album.pages.push(createPage(layoutId));
+      // Navigate to the newly created page
+      state.album.currentPageIndex = state.album.pages.length - 1;
+      state.selectedSlot = null;
     },
 
     removePage: (state, action: PayloadAction<number>) => {
@@ -700,7 +703,7 @@ const albumSlice = createSlice({
       state.album = initialState.album;
       state.selectedSlot = null;
       state.selectedFreestyleItem = null;
-      state.viewMode = 'book';
+      state.viewMode = 'edit';
       state.currentSpread = 0;
       state.status = 'idle';
       state.error = null;
@@ -759,7 +762,7 @@ const albumSlice = createSlice({
     loadAlbum: (state, action: PayloadAction<Album>) => {
       state.album = action.payload;
       state.selectedSlot = null;
-      state.viewMode = 'book';
+      state.viewMode = 'edit';
       state.currentSpread = 0;
       state.status = 'succeeded';
       state.error = null;
@@ -788,7 +791,7 @@ const albumSlice = createSlice({
       .addCase(fetchAlbum.fulfilled, (state, action) => {
         state.album = action.payload;
         state.selectedSlot = null;
-        state.viewMode = 'book';
+        state.viewMode = 'edit';
         state.currentSpread = 0;
         state.status = 'succeeded';
         state.error = null;
@@ -822,7 +825,7 @@ const albumSlice = createSlice({
           });
         }
         state.selectedSlot = null;
-        state.viewMode = 'book';
+        state.viewMode = 'edit';
         state.currentSpread = 0;
         state.status = 'succeeded';
         state.error = null;
@@ -858,7 +861,7 @@ const albumSlice = createSlice({
         state.albums = state.albums.filter((a) => a.id !== action.meta.arg);
         state.album = initialState.album;
         state.selectedSlot = null;
-        state.viewMode = 'book';
+        state.viewMode = 'edit';
         state.currentSpread = 0;
         state.status = 'idle';
         state.error = null;
@@ -872,6 +875,9 @@ const albumSlice = createSlice({
     builder
       .addCase(addPageAsync.fulfilled, (state, action) => {
         state.album.pages.push(action.payload);
+        // Navigate to the newly created page
+        state.album.currentPageIndex = state.album.pages.length - 1;
+        state.selectedSlot = null;
       })
       .addCase(addPageAsync.rejected, (state, action) => {
         state.error = action.payload ?? 'Failed to add page';

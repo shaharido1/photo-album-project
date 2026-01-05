@@ -85,6 +85,12 @@ export async function apiFetch<T>(
       throw new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
     }
 
+    // Handle 204 No Content responses (common for DELETE operations)
+    if (response.status === 204) {
+      console.log(`[API] Success (204 No Content): ${endpoint}`);
+      return undefined as T;
+    }
+
     const data = await response.json();
     console.log(`[API] Success: ${endpoint}`, data);
     return data as T;
@@ -176,6 +182,7 @@ export async function uploadFiles<T>(
   fieldName = 'photos',
   onProgress?: (progress: number) => void
 ): Promise<T> {
+  console.log('[uploadFiles] Starting upload to:', endpoint, 'files:', files.length, 'fieldName:', fieldName);
   const authHeaders = await getAuthHeaders();
 
   return new Promise((resolve, reject) => {
@@ -189,9 +196,11 @@ export async function uploadFiles<T>(
     });
 
     xhr.addEventListener('load', () => {
+      console.log('[uploadFiles] XHR load event, status:', xhr.status, 'response:', xhr.responseText.substring(0, 500));
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText) as T;
+          console.log('[uploadFiles] Parsed response:', response);
           resolve(response);
         } catch {
           reject(new Error('Failed to parse response'));

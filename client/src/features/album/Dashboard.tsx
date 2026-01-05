@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Plus, BookOpen, Clock, ImageIcon, ChevronRight, LayoutGrid, Search } from 'lucide-react';
+import { Plus, BookOpen, Clock, ChevronRight, LayoutGrid, Search, Trash2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
     fetchAlbums,
     selectAlbums,
     selectAlbumsStatus,
-    fetchAlbum
+    fetchAlbum,
+    deleteAlbum,
 } from '@/features/album/albumSlice';
 import { selectUser } from '@/features/auth/authSlice';
 import {
@@ -16,7 +17,22 @@ import {
 } from '@/features/googlePhotos/googlePhotosSlice';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export function Dashboard(): JSX.Element {
     const dispatch = useAppDispatch();
@@ -27,6 +43,7 @@ export function Dashboard(): JSX.Element {
 
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [albumToDelete, setAlbumToDelete] = useState<{ id: string; name: string } | null>(null);
 
     useEffect(() => {
         dispatch(fetchAlbums());
@@ -35,6 +52,13 @@ export function Dashboard(): JSX.Element {
 
     const handleOpenAlbum = (albumId: string) => {
         dispatch(fetchAlbum(albumId));
+    };
+
+    const handleDeleteAlbum = () => {
+        if (albumToDelete) {
+            dispatch(deleteAlbum(albumToDelete.id));
+            setAlbumToDelete(null);
+        }
     };
 
 
@@ -138,6 +162,31 @@ export function Dashboard(): JSX.Element {
                                                 Open Album <ChevronRight className="h-5 w-5" />
                                             </Button>
                                         </div>
+                                        {/* Menu button */}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                    className="text-destructive focus:text-destructive"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setAlbumToDelete({ id: album.id!, name: album.name });
+                                                    }}
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                     <div className="p-5 space-y-2">
                                         <CardTitle className="text-lg truncate group-hover:text-primary transition-colors">{album.name}</CardTitle>
@@ -178,6 +227,27 @@ export function Dashboard(): JSX.Element {
                 open={isCreateDialogOpen}
                 onOpenChange={setIsCreateDialogOpen}
             />
+
+            {/* Delete Album Confirmation Dialog */}
+            <AlertDialog open={!!albumToDelete} onOpenChange={(open) => !open && setAlbumToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete album?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete &quot;{albumToDelete?.name}&quot;. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteAlbum}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

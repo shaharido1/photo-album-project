@@ -15,6 +15,8 @@ import {
   type FirestoreAlbum,
   type FirestoreAlbumPage,
   type FirestoreAlbumWithPages,
+  type FirestorePageSlot,
+  type FirestoreFreestyleItem,
   type UserSettings,
   type UpdateSettingsRequest,
   DEFAULT_USER_SETTINGS,
@@ -505,7 +507,8 @@ export const albumService = {
         id?: string;
         layoutId: string;
         background: string;
-        slots: any[];
+        slots: FirestorePageSlot[];
+        freestyleItems?: FirestoreFreestyleItem[];
       }>;
     }
   ): Promise<boolean> {
@@ -527,7 +530,7 @@ export const albumService = {
     const now = Timestamp.now();
 
     // Update album metadata
-    const albumUpdates: Record<string, any> = {
+    const albumUpdates: Partial<FirestoreAlbum> & { updatedAt: typeof now } = {
       updatedAt: now,
     };
     if (updates.name !== undefined) albumUpdates.name = updates.name;
@@ -542,12 +545,17 @@ export const albumService = {
       const pagesCollection = albumRef.collection('pages');
 
       updates.pages.forEach((page, index) => {
-        const pageData = {
+        const pageData: Omit<FirestoreAlbumPage, 'id'> = {
           layoutId: page.layoutId,
           background: page.background,
           order: index,
           slots: page.slots,
         };
+
+        // Only include freestyleItems if defined (Firestore doesn't accept undefined)
+        if (page.freestyleItems !== undefined) {
+          pageData.freestyleItems = page.freestyleItems;
+        }
 
         if (page.id) {
           batch.set(pagesCollection.doc(page.id), pageData, { merge: true });

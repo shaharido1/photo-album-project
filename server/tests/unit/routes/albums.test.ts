@@ -173,6 +173,115 @@ describe('Albums API', () => {
 
       expect(response.status).toBe(200);
     });
+
+    it('should accept freestyle pages with freestyleItems', async () => {
+      // Create album first
+      const createResponse = await request(app)
+        .post('/api/albums')
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({ name: 'Freestyle Test Album', size: 'a4-portrait' });
+
+      expect(createResponse.status).toBe(201);
+      const albumId = createResponse.body.album.id;
+
+      const freestyleItems = [
+        {
+          id: 'item-1',
+          photoId: 'photo-123',
+          photoUrl: 'https://example.com/photo.jpg',
+          x: 10,
+          y: 20,
+          width: 30,
+          height: 25,
+          rotation: 0,
+          zIndex: 0,
+        },
+        {
+          id: 'item-2',
+          photoId: 'photo-456',
+          photoUrl: 'https://example.com/photo2.jpg',
+          x: 50,
+          y: 30,
+          width: 40,
+          height: 35,
+          rotation: 15,
+          zIndex: 1,
+        },
+      ];
+
+      const response = await request(app)
+        .put(`/api/albums/${albumId}/full`)
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({
+          name: 'Freestyle Album Updated',
+          pages: [
+            {
+              id: 'page-freestyle-1',
+              layoutId: 'freestyle',
+              background: '#ffffff',
+              slots: [],
+              freestyleItems,
+            },
+          ],
+        });
+
+      expect(response.status).toBe(200);
+    });
+
+    it('should accept mixed pages with template and freestyle layouts', async () => {
+      // Create album first
+      const createResponse = await request(app)
+        .post('/api/albums')
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({ name: 'Mixed Layout Album', size: '10x10' });
+
+      expect(createResponse.status).toBe(201);
+      const albumId = createResponse.body.album.id;
+
+      const response = await request(app)
+        .put(`/api/albums/${albumId}/full`)
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({
+          pages: [
+            {
+              id: 'page-1',
+              layoutId: 'single',
+              background: '#ffffff',
+              slots: [
+                {
+                  id: 'slot-1',
+                  photoId: 'photo-1',
+                  photoUrl: 'https://example.com/photo.jpg',
+                  position: { x: 0, y: 0 },
+                  scale: 1,
+                  rotation: 0,
+                },
+              ],
+            },
+            {
+              id: 'page-2',
+              layoutId: 'freestyle',
+              background: '#f0f0f0',
+              slots: [],
+              freestyleItems: [
+                {
+                  id: 'freestyle-item-1',
+                  photoId: 'photo-2',
+                  photoUrl: 'https://example.com/photo2.jpg',
+                  x: 25,
+                  y: 25,
+                  width: 50,
+                  height: 50,
+                  rotation: 45,
+                  zIndex: 0,
+                },
+              ],
+            },
+          ],
+        });
+
+      expect(response.status).toBe(200);
+    });
   });
 
   describe('DELETE /api/albums/:id', () => {

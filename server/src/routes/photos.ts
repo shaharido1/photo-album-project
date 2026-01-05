@@ -76,12 +76,16 @@ router.get(PHOTOS_ROOT, async (req: Request, res: Response): Promise<void> => {
   authMiddleware(req as AuthenticatedRequest, res, async () => {
     try {
       const authReq = req as AuthenticatedRequest;
+      // eslint-disable-next-line no-console
+      console.log('[PHOTOS] Fetching photos for user:', authReq.user!.uid);
       const photos = await photoService.getAll(authReq.user!.uid);
+      // eslint-disable-next-line no-console
+      console.log('[PHOTOS] Found', photos.length, 'photos');
       const response: PhotosResponse = { photos };
       res.json(response);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Error fetching photos:', error);
+      console.error('[PHOTOS] Error fetching photos:', error);
       res.status(500).json({ error: 'Failed to fetch photos' });
     }
   });
@@ -200,16 +204,24 @@ router.post(
   PHOTO_UPLOAD_BATCH,
   authMiddleware,
   (req: Request, res: Response, next: NextFunction) => {
+    // eslint-disable-next-line no-console
+    console.log('[UPLOAD] Batch upload started, processing multer...');
     uploadMultiple(req, res, (err) => {
       if (err) {
+        // eslint-disable-next-line no-console
+        console.error('[UPLOAD] Multer error:', err.message);
         res.status(400).json({ error: err.message });
         return;
       }
+      // eslint-disable-next-line no-console
+      console.log('[UPLOAD] Multer processing complete');
       next();
     });
   },
   async (req: Request, res: Response): Promise<void> => {
     const uploadReq = req as UploadRequest;
+    // eslint-disable-next-line no-console
+    console.log('[UPLOAD] Handler reached, files count:', uploadReq.files?.length || 0);
 
     if (!uploadReq.files || uploadReq.files.length === 0) {
       res.status(400).json({ error: 'No files uploaded' });
@@ -218,8 +230,12 @@ router.post(
 
     try {
       const userId = uploadReq.user!.uid;
+      // eslint-disable-next-line no-console
+      console.log('[UPLOAD] User ID:', userId, 'uploading', uploadReq.files.length, 'files');
       const results = await Promise.allSettled(
         uploadReq.files.map(async (file) => {
+          // eslint-disable-next-line no-console
+          console.log('[UPLOAD] Processing file:', file.originalname);
           const storageFile: StorageFile = {
             buffer: file.buffer,
             mimetype: file.mimetype,
@@ -230,6 +246,8 @@ router.post(
             userId,
             storageFile
           );
+          // eslint-disable-next-line no-console
+          console.log('[UPLOAD] Storage upload complete:', uploadResult.fullSizeUrl);
 
           const photoName = file.originalname.replace(/\.[^/.]+$/, '');
 
@@ -240,6 +258,8 @@ router.post(
             width: uploadResult.width,
             height: uploadResult.height,
           });
+          // eslint-disable-next-line no-console
+          console.log('[UPLOAD] Photo created in Firestore:', photo.id);
 
           // Return both photo and buffer for auto-tagging
           return { photo, buffer: file.buffer };
@@ -252,6 +272,19 @@ router.post(
             result.status === 'fulfilled'
         )
         .map((result) => result.value);
+
+      // Log failed uploads with full error details
+      const failedResults = results.filter(
+        (result): result is PromiseRejectedResult => result.status === 'rejected'
+      );
+      if (failedResults.length > 0) {
+        // eslint-disable-next-line no-console
+        console.error('[UPLOAD] Failed uploads:', failedResults.map(r => ({
+          message: r.reason?.message,
+          stack: r.reason?.stack,
+          full: r.reason
+        })));
+      }
 
       const photos = successResults.map((r) => r.photo);
 
@@ -269,6 +302,8 @@ router.post(
         )
         .map((result) => result.reason?.message || 'Unknown error');
 
+      // eslint-disable-next-line no-console
+      console.log('[UPLOAD] Sending response:', { uploaded: photos.length, failed: errors.length, photoIds: photos.map(p => p.id) });
       res.status(201).json({
         photos,
         errors: errors.length > 0 ? errors : undefined,

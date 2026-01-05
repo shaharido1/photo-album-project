@@ -169,6 +169,187 @@ describe('Album E2E Integration Tests', () => {
     });
   });
 
+  describe('Freestyle Canvas Flow', () => {
+    it('should persist freestyle page with freestyleItems and retrieve correctly', async () => {
+      const albumName = `E2E Freestyle Test ${generateTestId()}`;
+
+      // Step 1: Create album
+      const createResponse = await request(app)
+        .post('/api/albums')
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({ name: albumName, size: 'a4-portrait' });
+
+      expect(createResponse.status).toBe(201);
+      const albumId = createResponse.body.album.id;
+      createdAlbumIds.push(albumId);
+
+      // Step 2: Update album with freestyle page containing freestyleItems
+      const freestyleItems = [
+        {
+          id: 'freestyle-item-1',
+          photoId: 'test-photo-123',
+          photoUrl: 'https://example.com/photo1.jpg',
+          x: 10.5,
+          y: 20.3,
+          width: 30,
+          height: 25,
+          rotation: 0,
+          zIndex: 0,
+        },
+        {
+          id: 'freestyle-item-2',
+          photoId: 'test-photo-456',
+          photoUrl: 'https://example.com/photo2.jpg',
+          x: 50,
+          y: 40,
+          width: 35,
+          height: 30,
+          rotation: 45,
+          zIndex: 1,
+        },
+      ];
+
+      const updateResponse = await request(app)
+        .put(`/api/albums/${albumId}/full`)
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({
+          pages: [
+            {
+              id: 'page-freestyle',
+              layoutId: 'freestyle',
+              background: '#f5f5f5',
+              slots: [],
+              freestyleItems,
+            },
+          ],
+        });
+
+      console.log('Freestyle update response status:', updateResponse.status);
+      expect(updateResponse.status).toBe(200);
+
+      // Step 3: Retrieve album and verify freestyleItems are persisted
+      const getResponse = await request(app)
+        .get(`/api/albums/${albumId}`)
+        .set('X-Test-User-Id', TEST_USER_ID);
+
+      console.log('Freestyle get response status:', getResponse.status);
+      console.log('Freestyle page data:', JSON.stringify(getResponse.body.album.pages[0], null, 2));
+
+      expect(getResponse.status).toBe(200);
+      expect(getResponse.body.album.pages).toBeDefined();
+      expect(getResponse.body.album.pages.length).toBe(1);
+
+      const freestylePage = getResponse.body.album.pages[0];
+      expect(freestylePage.layoutId).toBe('freestyle');
+      expect(freestylePage.freestyleItems).toBeDefined();
+      expect(Array.isArray(freestylePage.freestyleItems)).toBe(true);
+      expect(freestylePage.freestyleItems.length).toBe(2);
+
+      // Verify first freestyle item data integrity
+      const item1 = freestylePage.freestyleItems.find(
+        (item: { id: string }) => item.id === 'freestyle-item-1'
+      );
+      expect(item1).toBeDefined();
+      expect(item1.photoId).toBe('test-photo-123');
+      expect(item1.x).toBe(10.5);
+      expect(item1.y).toBe(20.3);
+      expect(item1.width).toBe(30);
+      expect(item1.rotation).toBe(0);
+      expect(item1.zIndex).toBe(0);
+
+      // Verify second freestyle item
+      const item2 = freestylePage.freestyleItems.find(
+        (item: { id: string }) => item.id === 'freestyle-item-2'
+      );
+      expect(item2).toBeDefined();
+      expect(item2.rotation).toBe(45);
+      expect(item2.zIndex).toBe(1);
+    });
+
+    it('should persist mixed album with both template and freestyle pages', async () => {
+      const albumName = `E2E Mixed Layout Test ${generateTestId()}`;
+
+      // Create album
+      const createResponse = await request(app)
+        .post('/api/albums')
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({ name: albumName, size: '10x10' });
+
+      expect(createResponse.status).toBe(201);
+      const albumId = createResponse.body.album.id;
+      createdAlbumIds.push(albumId);
+
+      // Update with mixed pages
+      const updateResponse = await request(app)
+        .put(`/api/albums/${albumId}/full`)
+        .set('X-Test-User-Id', TEST_USER_ID)
+        .send({
+          pages: [
+            {
+              id: 'page-template',
+              layoutId: 'single',
+              background: '#ffffff',
+              slots: [
+                {
+                  id: 'slot-1',
+                  photoId: 'photo-in-slot',
+                  photoUrl: 'https://example.com/slot-photo.jpg',
+                  position: { x: 0, y: 0 },
+                  scale: 1,
+                  rotation: 0,
+                },
+              ],
+            },
+            {
+              id: 'page-freestyle',
+              layoutId: 'freestyle',
+              background: '#e0e0e0',
+              slots: [],
+              freestyleItems: [
+                {
+                  id: 'free-item',
+                  photoId: 'photo-freestyle',
+                  x: 25,
+                  y: 25,
+                  width: 50,
+                  height: 50,
+                  rotation: 90,
+                  zIndex: 0,
+                },
+              ],
+            },
+          ],
+        });
+
+      expect(updateResponse.status).toBe(200);
+
+      // Retrieve and verify both page types
+      const getResponse = await request(app)
+        .get(`/api/albums/${albumId}`)
+        .set('X-Test-User-Id', TEST_USER_ID);
+
+      expect(getResponse.status).toBe(200);
+      expect(getResponse.body.album.pages.length).toBe(2);
+
+      // Verify template page has slots
+      const templatePage = getResponse.body.album.pages.find(
+        (p: { layoutId: string }) => p.layoutId === 'single'
+      );
+      expect(templatePage).toBeDefined();
+      expect(templatePage.slots.length).toBe(1);
+      expect(templatePage.slots[0].photoId).toBe('photo-in-slot');
+
+      // Verify freestyle page has freestyleItems
+      const freestylePage = getResponse.body.album.pages.find(
+        (p: { layoutId: string }) => p.layoutId === 'freestyle'
+      );
+      expect(freestylePage).toBeDefined();
+      expect(freestylePage.freestyleItems).toBeDefined();
+      expect(freestylePage.freestyleItems.length).toBe(1);
+      expect(freestylePage.freestyleItems[0].rotation).toBe(90);
+    });
+  });
+
   describe('Album Pages Flow', () => {
     it('should add a page to an album and persist to Firebase', async () => {
       const albumName = `E2E Page Test ${generateTestId()}`;

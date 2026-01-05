@@ -6,7 +6,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from project root BEFORE other imports
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+const envPath = path.join(__dirname, '../../.env');
+console.log('[ENV] Loading .env from:', envPath);
+const dotenvResult = dotenv.config({ path: envPath });
+if (dotenvResult.error) {
+  console.error('[ENV] Error loading .env:', dotenvResult.error);
+}
+console.log('[ENV] USE_CLOUDINARY_STORAGE:', process.env.USE_CLOUDINARY_STORAGE);
+console.log('[ENV] CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME ? 'SET' : 'NOT SET');
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
@@ -41,6 +48,11 @@ if (localStorageDir) {
   // eslint-disable-next-line no-console
   console.log('Local storage enabled, serving files from:', localStorageDir);
   app.use('/api/storage', express.static(localStorageDir));
+} else {
+  // Return 404 for storage requests when not using local storage (prevents redirect loop)
+  app.use('/api/storage', (_req: Request, res: Response): void => {
+    res.status(404).json({ error: 'Local storage not enabled' });
+  });
 }
 
 app.use('/api', apiRoutes);

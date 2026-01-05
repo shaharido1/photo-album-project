@@ -141,6 +141,8 @@ export async function processSlotImage(
 
 /**
  * Process a freestyle item image
+ * For freestyle items, we use object-fit: fill behavior (stretch to fit)
+ * to match how Konva renders images in the editor
  */
 export async function processFreestyleImage(
   item: FreestyleItem,
@@ -159,16 +161,14 @@ export async function processFreestyleImage(
     const itemWidth = (item.width / 100) * canvasWidth;
     const itemHeight = (item.height / 100) * canvasHeight;
 
-    // For freestyle items, we want object-fit: cover behavior
-    const processedImage = await renderImageToCanvas(
+    // For freestyle items, we use "fill" behavior (stretch to fit bounds)
+    // This matches how Konva KonvaImage renders - it stretches the image
+    // to fill the exact width/height specified
+    const processedImage = await renderFreestyleImageToCanvas(
       img,
       item.filters || DEFAULT_FILTER_VALUES,
       itemWidth,
       itemHeight,
-      { x: 0, y: 0 }, // Freestyle items don't have position offset within their bounds
-      1, // No additional scale
-      photo?.width || img.naturalWidth,
-      photo?.height || img.naturalHeight,
       colorSpace
     );
 
@@ -188,7 +188,49 @@ export async function processFreestyleImage(
 }
 
 /**
+ * Render a freestyle image to canvas with filters (fill/stretch behavior)
+ * This matches Konva's default image rendering which stretches to fit bounds
+ */
+async function renderFreestyleImageToCanvas(
+  img: HTMLImageElement,
+  filters: PhotoFilterValues,
+  targetWidth: number,
+  targetHeight: number,
+  colorSpace: ColorSpace
+): Promise<ProcessedImage> {
+  // Create canvas at target size
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(targetWidth);
+  canvas.height = Math.round(targetHeight);
+  const ctx = canvas.getContext('2d')!;
+
+  // Apply filters
+  applyFilters(ctx, filters);
+
+  // Draw the image stretched to fill the entire canvas (object-fit: fill)
+  // This matches how Konva KonvaImage renders with explicit width/height
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  // Apply CMYK simulation if needed
+  if (colorSpace === 'cmyk-simulation') {
+    applyCMYKSimulation(ctx, canvas.width, canvas.height);
+  }
+
+  // Export as JPEG for smaller file size
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  return {
+    dataUrl,
+    format: 'JPEG',
+    width: canvas.width,
+    height: canvas.height,
+  };
+}
+
+/**
  * Render an image to canvas with filters and proper cropping
+ * This matches the editor's behavior: image starts at top-left of slot,
+ * with the offset applied, and overflowing content is clipped
  */
 async function renderImageToCanvas(
   img: HTMLImageElement,
@@ -211,6 +253,7 @@ async function renderImageToCanvas(
   applyFilters(ctx, filters);
 
   // Calculate image dimensions to fit (cover behavior)
+  // This matches EditorCanvas.tsx lines 182-196
   const imgAspect = photoWidth / photoHeight;
   const targetAspect = targetWidth / targetHeight;
 
@@ -228,14 +271,15 @@ async function renderImageToCanvas(
   }
 
   // Apply position offset (percentage of target dimensions)
-  const offsetX = (position.x / 100) * targetWidth;
-  const offsetY = (position.y / 100) * targetHeight;
+  // This matches EditorCanvas.tsx lines 179-180:
+  // const imageX = slotX + (slot.position.x / 100) * slotWidth;
+  // Since we're drawing relative to the canvas (which represents the slot),
+  // we just use the offset directly from 0,0
+  const drawX = (position.x / 100) * targetWidth;
+  const drawY = (position.y / 100) * targetHeight;
 
-  // Center the image and apply offset
-  const drawX = (targetWidth - drawWidth) / 2 + offsetX;
-  const drawY = (targetHeight - drawHeight) / 2 + offsetY;
-
-  // Draw the image
+  // Draw the image starting from offset position (not centered)
+  // The image will overflow and get clipped by the canvas bounds
   ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 
   // Apply CMYK simulation if needed (simple desaturation + warm shift)
