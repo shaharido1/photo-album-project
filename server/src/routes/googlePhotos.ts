@@ -19,7 +19,9 @@ import {
   type GooglePhotosStatusResponse,
   type OAuthStartResponse,
   type ImportPhotosResponse,
+  type ImportStreamEvent,
 } from '@photo-album/types';
+import { photoService } from '../services/firebaseService.js';
 
 const router = Router();
 
@@ -31,6 +33,7 @@ const DISCONNECT = API_ENDPOINTS.GOOGLE_PHOTOS_DISCONNECT.replace('/api/google-p
 const ALBUMS = API_ENDPOINTS.GOOGLE_PHOTOS_ALBUMS.replace('/api/google-photos', '');
 const PHOTOS = API_ENDPOINTS.GOOGLE_PHOTOS_PHOTOS.replace('/api/google-photos', '');
 const IMPORT = API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT.replace('/api/google-photos', '');
+const IMPORT_STREAM = API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT_STREAM.replace('/api/google-photos', '');
 const PICKER_START = API_ENDPOINTS.GOOGLE_PHOTOS_PICKER_START.replace('/api/google-photos', '');
 const PICKER_STATUS = API_ENDPOINTS.GOOGLE_PHOTOS_PICKER_STATUS.replace('/api/google-photos', '');
 const PROXY_IMAGE = API_ENDPOINTS.GOOGLE_PHOTOS_PROXY_IMAGE.replace('/api/google-photos', '');
@@ -296,6 +299,115 @@ router.post(
 );
 
 /**
+ * POST /api/google-photos/import/stream
+ * Import selected photos from Google Photos with Server-Sent Events streaming
+ * Each photo is sent to the client as soon as it's imported
+ */
+router.post(
+  IMPORT_STREAM,
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const parseResult = ImportPhotosRequestSchema.safeParse(req.body);
+
+      if (!parseResult.success) {
+        res.status(400).json({
+          error: 'Invalid request',
+          details: parseResult.error.errors,
+        });
+        return;
+      }
+
+      const { items, options } = parseResult.data;
+      console.log(`[GooglePhotosRoute] Starting streaming import of ${items.length} photos for user ${req.user!.uid}`);
+
+      const accessToken = await googleOAuthService.getValidAccessToken(
+        req.user!.uid
+      );
+
+      // Set up SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+      res.flushHeaders();
+
+      // Helper to send SSE event
+      const sendEvent = (event: ImportStreamEvent) => {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      };
+
+      let imported = 0;
+      let failed = 0;
+
+      // Stream each photo import
+      for await (const progress of googlePhotosService.importPhotosStream(
+        req.user!.uid,
+        accessToken,
+        items,
+        options
+      )) {
+        // If the photo was successfully imported, fetch the full photo data
+        if (progress.success && progress.photoId) {
+          try {
+            const photo = await photoService.getById(req.user!.uid, progress.photoId);
+            if (photo) {
+              sendEvent({
+                ...progress,
+                photo, // Include full photo data for immediate UI update
+              } as ImportStreamEvent);
+            } else {
+              sendEvent(progress);
+            }
+          } catch {
+            sendEvent(progress);
+          }
+        } else {
+          sendEvent(progress);
+        }
+
+        imported = progress.imported;
+        failed = progress.failed;
+      }
+
+      // Send completion event
+      sendEvent({
+        type: 'complete',
+        imported,
+        failed,
+        total: items.length,
+      });
+
+      console.log(`[GooglePhotosRoute] Streaming import complete. Success: ${imported}, Failed: ${failed}`);
+
+      res.end();
+    } catch (error) {
+      console.error('[GooglePhotosRoute] Error in streaming import:', error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to import photos';
+
+      // If headers haven't been sent yet, send JSON error
+      if (!res.headersSent) {
+        if (errorMessage.includes('not connected')) {
+          res.status(401).json({ error: 'Google Photos not connected' });
+          return;
+        }
+        res.status(500).json({ error: errorMessage });
+      } else {
+        // Headers already sent, send error as SSE event
+        const errorEvent: ImportStreamEvent = {
+          type: 'error',
+          error: errorMessage,
+        };
+        res.write(`data: ${JSON.stringify(errorEvent)}\n\n`);
+        res.end();
+      }
+    }
+  }
+);
+
+/**
  * GET /api/google-photos/debug/token-info
  * Debug endpoint to check current access token info and scopes
  */
@@ -314,7 +426,7 @@ router.get(
 
       const tokenInfo = (await tokenInfoResponse.json()) as {
         scope?: string;
-        [key: string]: any;
+        [key: string]: unknown;
       };
 
       res.json({

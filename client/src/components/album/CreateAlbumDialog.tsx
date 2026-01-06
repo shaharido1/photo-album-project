@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -73,6 +74,7 @@ export function CreateAlbumDialog({
   onOpenChange,
 }: CreateAlbumDialogProps): JSX.Element {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [albumName, setAlbumName] = React.useState('');
   const [selectedSize, setSelectedSize] = React.useState<AlbumSizeOption>(
@@ -88,9 +90,13 @@ export function CreateAlbumDialog({
       // Use async thunk to create album in Firebase if user is logged in
       // Otherwise, create locally for demo/unauthenticated use
       if (isAuthenticated) {
-        await dispatch(
+        const result = await dispatch(
           createAlbumAsync({ name: albumName, size: selectedSize.id })
         ).unwrap();
+        // Navigate to the new album via URL
+        if (result.id) {
+          navigate(`/album/${result.id}`);
+        }
       } else {
         dispatch(createAlbum({ name: albumName, size: selectedSize.id }));
       }

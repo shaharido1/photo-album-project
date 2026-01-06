@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +17,6 @@ import {
 import { Book, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import {
   fetchAlbums,
-  fetchAlbum,
   deleteAlbum,
   selectAlbums,
   selectAlbumsStatus,
@@ -33,6 +33,7 @@ interface MyAlbumsPanelProps {
 
 export function MyAlbumsPanel({ onCreateAlbum }: MyAlbumsPanelProps): JSX.Element {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [loadingAlbumId, setLoadingAlbumId] = useState<string | null>(null);
 
   const albums = useAppSelector(selectAlbums);
@@ -49,14 +50,13 @@ export function MyAlbumsPanel({ onCreateAlbum }: MyAlbumsPanelProps): JSX.Elemen
   const isLoading = albumsStatus === 'loading';
   const hasFailed = albumsStatus === 'failed';
 
-  const handleSelectAlbum = async (albumId: string): Promise<void> => {
+  const handleSelectAlbum = (albumId: string): void => {
     if (albumId === currentAlbumId || loadingAlbumId) return;
     setLoadingAlbumId(albumId);
-    try {
-      await dispatch(fetchAlbum(albumId)).unwrap();
-    } finally {
-      setLoadingAlbumId(null);
-    }
+    // Navigate via URL - the useUrlSync hook will handle fetching
+    navigate(`/album/${albumId}`);
+    // Clear loading state after navigation
+    setTimeout(() => setLoadingAlbumId(null), 500);
   };
 
   const handleDeleteAlbum = (albumId: string): void => {

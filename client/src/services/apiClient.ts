@@ -242,6 +242,76 @@ export async function uploadFiles<T>(
 /**
  * Convenience methods for common HTTP methods
  */
+/**
+ * Stream SSE events from a POST endpoint
+ *
+ * @param endpoint - API endpoint
+ * @param body - Request body
+ * @param onEvent - Callback for each SSE event
+ * @param onError - Callback for errors
+ * @param onComplete - Callback when stream ends
+ */
+export async function streamSSE<T>(
+  endpoint: ApiEndpoint | string,
+  body: unknown,
+  onEvent: (event: T) => void,
+  onError?: (error: Error) => void,
+  onComplete?: () => void
+): Promise<void> {
+  const authHeaders = await getAuthHeaders();
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as ApiError;
+      throw new Error(errorData.error || `Request failed with status ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE messages
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6)) as T;
+            onEvent(data);
+          } catch {
+            console.warn('[SSE] Failed to parse event:', line);
+          }
+        }
+      }
+    }
+
+    onComplete?.();
+  } catch (error) {
+    console.error('[SSE] Stream error:', error);
+    onError?.(error instanceof Error ? error : new Error('Stream failed'));
+  }
+}
+
 export const api = {
   /**
    * GET request
@@ -300,5 +370,18 @@ export const api = {
     onProgress?: (progress: number) => void
   ): Promise<T> {
     return uploadFiles<T>(endpoint, files, fieldName, onProgress);
+  },
+
+  /**
+   * Stream SSE events from a POST endpoint
+   */
+  streamSSE<T>(
+    endpoint: ApiEndpoint | string,
+    body: unknown,
+    onEvent: (event: T) => void,
+    onError?: (error: Error) => void,
+    onComplete?: () => void
+  ): Promise<void> {
+    return streamSSE<T>(endpoint, body, onEvent, onError, onComplete);
   },
 };

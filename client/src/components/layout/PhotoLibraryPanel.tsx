@@ -35,7 +35,6 @@ import {
   selectUploadStatus,
   selectUploadProgress,
   selectUploadError,
-  resetUploadState,
   deletePhotoFromServer,
 } from '@/features/photos/photosSlice';
 import {
@@ -48,6 +47,7 @@ import {
   selectGooglePhotosPickerStatus,
   selectGooglePhotosPickerSessionId,
   selectGooglePhotosImportStatus,
+  selectGooglePhotosImportProgress,
   resetImportState,
   resetPickerState,
 } from '@/features/googlePhotos/googlePhotosSlice';
@@ -60,7 +60,7 @@ import {
 } from '@/features/album/albumSlice';
 import { cn, getPhotoUrl } from '@/lib/utils';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { API_ENDPOINTS } from '@photo-album/types';
+import type { Photo } from '@/types';
 
 // Accepted image types
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -105,6 +105,7 @@ export function PhotoLibraryPanel(): JSX.Element {
   const googleConnectionStatus = useAppSelector(selectGooglePhotosConnectionStatus);
   const googlePickerStatus = useAppSelector(selectGooglePhotosPickerStatus);
   const googleImportStatus = useAppSelector(selectGooglePhotosImportStatus);
+  const googleImportProgress = useAppSelector(selectGooglePhotosImportProgress);
 
   const googlePickerSessionId = useAppSelector(selectGooglePhotosPickerSessionId);
 
@@ -123,7 +124,7 @@ export function PhotoLibraryPanel(): JSX.Element {
 
   // Poll for Google Photos picker status
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (googlePickerStatus === 'polling' && googlePickerSessionId) {
       interval = setInterval(() => {
         void dispatch(checkGooglePhotosPickerStatus(googlePickerSessionId));
@@ -241,14 +242,14 @@ export function PhotoLibraryPanel(): JSX.Element {
 
   const handleDragStart = (
     e: DragEvent<HTMLDivElement>,
-    photo: any
+    photo: Photo
   ): void => {
     e.dataTransfer.setData('photoId', photo.id);
     e.dataTransfer.setData('photoUrl', photo.fullSize || photo.thumbnail);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleDoubleClick = (photo: any): void => {
+  const handleDoubleClick = (photo: Photo): void => {
     if (!albumId || !currentPage) return;
 
     // Find first empty slot
@@ -368,14 +369,34 @@ export function PhotoLibraryPanel(): JSX.Element {
           </div>
         )}
 
-        {googleImportStatus === 'importing' && (
+        {googleImportStatus === 'importing' && googleImportProgress && (
           <div className="mt-2 p-2 bg-primary/5 border border-primary/20 rounded text-xs text-primary">
             <div className="flex items-center gap-2 mb-1">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Importing from Google Photos...</span>
+              <span>
+                Importing {googleImportProgress.imported + googleImportProgress.failed}/{googleImportProgress.total} photos...
+              </span>
             </div>
-            <div className="w-full bg-primary/10 rounded-full h-1">
-              <div className="bg-primary h-1 rounded-full animate-pulse w-full" />
+            <div className="w-full bg-primary/10 rounded-full h-1.5">
+              <div
+                className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: `${((googleImportProgress.imported + googleImportProgress.failed) / googleImportProgress.total) * 100}%`,
+                }}
+              />
+            </div>
+            {googleImportProgress.failed > 0 && (
+              <div className="mt-1 text-amber-600">
+                {googleImportProgress.failed} failed
+              </div>
+            )}
+          </div>
+        )}
+        {googleImportStatus === 'importing' && !googleImportProgress && (
+          <div className="mt-2 p-2 bg-primary/5 border border-primary/20 rounded text-xs text-primary">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Starting import...</span>
             </div>
           </div>
         )}

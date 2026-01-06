@@ -1,6 +1,11 @@
 /// <reference types="jest" />
 import '@testing-library/jest-dom';
 
+// Polyfill for TextEncoder/TextDecoder (needed by React Router)
+import { TextEncoder, TextDecoder } from 'util';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+
 // Mock ResizeObserver for tests (needed by Radix UI components like Slider)
 class ResizeObserverMock {
   observe = jest.fn();

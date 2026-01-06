@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, BookOpen, Clock, ChevronRight, LayoutGrid, Search, Trash2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card';
@@ -8,7 +9,6 @@ import {
     fetchAlbums,
     selectAlbums,
     selectAlbumsStatus,
-    fetchAlbum,
     deleteAlbum,
 } from '@/features/album/albumSlice';
 import { selectUser } from '@/features/auth/authSlice';
@@ -36,6 +36,7 @@ import {
 
 export function Dashboard(): JSX.Element {
     const dispatch = useAppDispatch();
+    const navigate = useNavigate();
     const albums = useAppSelector(selectAlbums);
     const status = useAppSelector(selectAlbumsStatus);
     const user = useAppSelector(selectUser);
@@ -51,7 +52,8 @@ export function Dashboard(): JSX.Element {
     }, [dispatch]);
 
     const handleOpenAlbum = (albumId: string) => {
-        dispatch(fetchAlbum(albumId));
+        // Navigate via URL - the useUrlSync hook will handle fetching the album
+        navigate(`/album/${albumId}`);
     };
 
     const handleDeleteAlbum = () => {

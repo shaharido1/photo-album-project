@@ -1,9 +1,10 @@
 /// <reference types="jest" />
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import { LandingPage } from './LandingPage';
-import albumReducer, { fetchAlbums, fetchAlbum } from '@/features/album/albumSlice';
+import albumReducer, { fetchAlbums } from '@/features/album/albumSlice';
 import authReducer from '@/features/auth/authSlice';
 import googlePhotosReducer, {
     checkGooglePhotosStatus,
@@ -12,6 +13,13 @@ import googlePhotosReducer, {
 } from '@/features/googlePhotos/googlePhotosSlice';
 import photosReducer from '@/features/photos/photosSlice';
 
+// Mock useNavigate
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+    ...jest.requireActual('react-router-dom'),
+    useNavigate: () => mockNavigate,
+}));
+
 // Mock the async thunks
 jest.mock('@/features/album/albumSlice', () => {
     const actual = jest.requireActual('@/features/album/albumSlice');
@@ -19,7 +27,6 @@ jest.mock('@/features/album/albumSlice', () => {
         ...actual,
         __esModule: true,
         fetchAlbums: jest.fn(() => ({ type: 'album/fetchAlbums' })),
-        fetchAlbum: jest.fn((id) => ({ type: 'album/fetchAlbum', payload: id })),
     };
 });
 
@@ -46,6 +53,7 @@ let mockState: any;
 describe('LandingPage', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockNavigate.mockClear();
         mockState = {
             auth: {
                 user: null,
@@ -80,7 +88,9 @@ describe('LandingPage', () => {
                     photos: photosReducer
                 }
             })}>
-                <LandingPage />
+                <MemoryRouter>
+                    <LandingPage />
+                </MemoryRouter>
             </Provider>
         );
     };
@@ -115,7 +125,7 @@ describe('LandingPage', () => {
         expect(screen.getByText('My Travel Album')).toBeInTheDocument();
     });
 
-    it('dispatches fetchAlbum when clicking an album card', () => {
+    it('navigates to album when clicking an album card', () => {
         mockState.auth.user = { id: '123' };
         mockState.album.albums = [{ id: 'album-123', name: 'My Travel Album', size: '10x10', currentPageIndex: 0 }];
         mockState.album.albumsStatus = 'succeeded';
@@ -125,7 +135,7 @@ describe('LandingPage', () => {
         const albumCard = screen.getByText('My Travel Album');
         fireEvent.click(albumCard);
 
-        expect(fetchAlbum).toHaveBeenCalledWith('album-123');
+        expect(mockNavigate).toHaveBeenCalledWith('/album/album-123');
     });
 
     describe('Google Photos integration', () => {

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Plus, Trash2, Layers } from 'lucide-react';
@@ -7,7 +8,6 @@ import {
   selectAlbumId,
   selectViewMode,
   selectCurrentSpread,
-  setCurrentPage,
   setCurrentSpread,
   editPage,
   addPage,
@@ -172,6 +172,7 @@ function isPageInSpread(pageIndex: number, spreadIndex: number): boolean {
 
 export function PageTimeline(): JSX.Element {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const albumId = useAppSelector(selectAlbumId);
   const pages = useAppSelector(selectPages);
   const currentPageIndex = useAppSelector(selectCurrentPageIndex);
@@ -185,8 +186,10 @@ export function PageTimeline(): JSX.Element {
       const spreadIndex = getSpreadIndexForPage(index);
       dispatch(setCurrentSpread(spreadIndex));
     } else {
-      // In edit view, select the page for editing
-      dispatch(setCurrentPage(index));
+      // In edit view, navigate to the page URL (which syncs to Redux)
+      if (albumId) {
+        navigate(index > 0 ? `/album/${albumId}/page/${index}` : `/album/${albumId}`);
+      }
     }
   };
 

@@ -84,6 +84,10 @@ const photosSlice = createSlice({
       // Add uploaded photos to the beginning of the array
       state.items.unshift(...action.payload);
     },
+    addPhoto: (state, action: PayloadAction<Photo>) => {
+      // Add a single photo to the beginning of the array
+      state.items.unshift(action.payload);
+    },
     deletePhoto: (state, action: PayloadAction<string>) => {
       const photoId = action.payload;
       state.items = state.items.filter((photo) => photo.id !== photoId);
@@ -173,6 +177,7 @@ const photosSlice = createSlice({
 
 export const {
   addPhotos,
+  addPhoto,
   deletePhoto,
   deleteSelectedPhotos,
   selectPhoto,

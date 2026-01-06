@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Download, Save, Moon, Sun, Plus, MessageSquare } from 'lucide-react';
+import { Download, Save, Moon, Sun, Plus, MessageSquare, Home } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { selectAlbumName, selectAlbumId } from '@/features/album/albumSlice';
 import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog';
@@ -9,6 +10,7 @@ import { LoginButton } from '@/components/auth/LoginButton';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { ViewModeToggle } from './ViewModeToggle';
 import { useAppSelector } from '@/app/hooks';
+import { useLastVisited } from '@/hooks/useLastVisited';
 
 interface HeaderProps {
   onCreateAlbum?: () => void;
@@ -24,6 +26,8 @@ const getInitialDarkMode = (): boolean => {
 };
 
 export function Header({ onCreateAlbum }: HeaderProps): JSX.Element {
+  const navigate = useNavigate();
+  const { clearLastVisited } = useLastVisited();
   const [isDark, setIsDark] = useState(getInitialDarkMode);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
@@ -37,10 +41,22 @@ export function Header({ onCreateAlbum }: HeaderProps): JSX.Element {
     document.documentElement.classList.toggle('dark');
   };
 
+  const handleGoToDashboard = (): void => {
+    // Clear last visited so we don't auto-redirect back
+    clearLastVisited();
+    navigate('/');
+  };
+
   return (
     <header className="h-14 border-b bg-background flex items-center justify-between px-4">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold">Photo Album</h1>
+        <button
+          onClick={handleGoToDashboard}
+          className="text-lg font-semibold hover:text-primary transition-colors cursor-pointer flex items-center gap-2"
+        >
+          <Home className="h-4 w-4" />
+          Photo Album
+        </button>
         {albumId ? (
           <span className="text-sm text-muted-foreground">{albumName}</span>
         ) : (

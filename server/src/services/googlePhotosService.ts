@@ -12,6 +12,7 @@ import type {
   GooglePhotosMediaItem,
   ImportOptions,
   ImportPhotoResult,
+  ImportPhotoProgressEvent,
 } from '@photo-album/types';
 import { storageService, type StorageFile } from './storageService.js';
 import { photoService } from './firebaseService.js';
@@ -391,6 +392,118 @@ export const googlePhotosService = {
   },
 
   /**
+   * Import photos from Google Photos with streaming (yields progress for each photo)
+   * This is an async generator that yields ImportPhotoProgressEvent for each photo
+   */
+  async *importPhotosStream(
+    userId: string,
+    accessToken: string,
+    items: GooglePhotosMediaItem[],
+    options: ImportOptions
+  ): AsyncGenerator<ImportPhotoProgressEvent> {
+    let imported = 0;
+    let failed = 0;
+    const total = items.length;
+
+    for (const mediaItem of items) {
+      const googlePhotoId = mediaItem.id;
+      try {
+        console.log(`[GooglePhotosService] Importing item: ${mediaItem.filename} (${googlePhotoId})`);
+
+        let photoId: string;
+
+        if (options.storageType === 'firebase' || options.storageType === 'local') {
+          const width = mediaItem.mediaMetadata?.width
+            ? parseInt(mediaItem.mediaMetadata.width, 10)
+            : undefined;
+          const height = mediaItem.mediaMetadata?.height
+            ? parseInt(mediaItem.mediaMetadata.height, 10)
+            : undefined;
+
+          console.log(`[GooglePhotosService] Storage: ${options.storageType}. Downloading first...`);
+          const photoBuffer = await downloadPhoto(
+            accessToken,
+            mediaItem.baseUrl,
+            width,
+            height
+          );
+
+          const storageFile: StorageFile = {
+            buffer: photoBuffer,
+            mimetype: mediaItem.mimeType,
+            originalname: mediaItem.filename,
+          };
+
+          const uploadResult = await storageService.uploadPhoto(userId, storageFile);
+
+          const photo = await photoService.create(userId, {
+            name: mediaItem.filename,
+            thumbnail: uploadResult.thumbnailUrl,
+            fullSize: uploadResult.fullSizeUrl,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            source: 'google',
+            storageType: options.storageType,
+            googlePhotoId,
+          });
+
+          photoId = photo.id;
+        } else {
+          // google-reference
+          console.log(`[GooglePhotosService] Storage: google-reference.`);
+          const width = mediaItem.mediaMetadata?.width
+            ? parseInt(mediaItem.mediaMetadata.width, 10)
+            : 800;
+          const height = mediaItem.mediaMetadata?.height
+            ? parseInt(mediaItem.mediaMetadata.height, 10)
+            : 600;
+
+          const thumbnailUrl = `${mediaItem.baseUrl}=w300-h300-c`;
+          const fullSizeUrl = `${mediaItem.baseUrl}=w${width}-h${height}`;
+
+          const photo = await photoService.create(userId, {
+            name: mediaItem.filename,
+            thumbnail: thumbnailUrl,
+            fullSize: fullSizeUrl,
+            width,
+            height,
+            source: 'google',
+            storageType: 'google-reference',
+            googlePhotoId,
+            googlePhotoUrl: mediaItem.baseUrl,
+          });
+
+          photoId = photo.id;
+        }
+
+        imported++;
+        yield {
+          type: 'photo' as const,
+          googlePhotoId,
+          success: true,
+          photoId,
+          imported,
+          failed,
+          total,
+        };
+      } catch (error) {
+        console.error(`[GooglePhotosService] Failed to import ${mediaItem.filename}:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        failed++;
+        yield {
+          type: 'photo' as const,
+          googlePhotoId,
+          success: false,
+          error: errorMessage,
+          imported,
+          failed,
+          total,
+        };
+      }
+    }
+  },
+
+  /**
    * Refresh Google Photos URLs for reference-type photos
    */
   async refreshPhotoUrl(
@@ -491,7 +604,7 @@ export const googlePhotosService = {
         baseUrl?: string;
         mimeType?: string;
         filename?: string;
-        mediaMetadata?: any;
+        mediaMetadata?: Record<string, unknown>;
         mediaFile?: {
           baseUrl?: string;
           filename?: string;

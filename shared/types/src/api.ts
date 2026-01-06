@@ -100,6 +100,7 @@ export const API_ENDPOINTS = {
   GOOGLE_PHOTOS_ALBUMS: '/api/google-photos/albums',
   GOOGLE_PHOTOS_PHOTOS: '/api/google-photos/photos',
   GOOGLE_PHOTOS_IMPORT: '/api/google-photos/import',
+  GOOGLE_PHOTOS_IMPORT_STREAM: '/api/google-photos/import/stream',
   GOOGLE_PHOTOS_PICKER_START: '/api/google-photos/picker/start',
   GOOGLE_PHOTOS_PICKER_STATUS: '/api/google-photos/picker/status',
   GOOGLE_PHOTOS_PROXY_IMAGE: '/api/google-photos/proxy-image',

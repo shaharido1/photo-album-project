@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
-import { api, API_ENDPOINTS } from '@/services/apiClient';
+import { api, API_ENDPOINTS, streamSSE } from '@/services/apiClient';
 import type {
   GooglePhotosAlbum,
   GooglePhotosMediaItem,
@@ -10,8 +10,9 @@ import type {
   OAuthStartResponse,
   ImportPhotosResponse,
   ImportOptions,
+  ImportStreamEvent,
 } from '@photo-album/types';
-import { addPhotos } from '../photos/photosSlice';
+import { addPhoto } from '../photos/photosSlice';
 import type { Photo } from '@/types';
 import { signOut } from '../auth/authSlice';
 
@@ -182,39 +183,68 @@ export const checkGooglePhotosPickerStatus = createAsyncThunk<
 });
 
 
-// Import selected photos
+// Import selected photos with streaming (photos appear as they're imported)
 export const importGooglePhotos = createAsyncThunk<
   ImportPhotosResponse,
   { items: GooglePhotosMediaItem[]; options: ImportOptions },
-  { rejectValue: string }
+  { dispatch: ReturnType<typeof import('@/app/store').store.dispatch>; rejectValue: string }
 >('googlePhotos/importPhotos', async ({ items, options }, { dispatch, rejectWithValue }) => {
-  try {
-    const response = await api.post<ImportPhotosResponse>(
-      API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT,
+  return new Promise<ImportPhotosResponse>((resolve, reject) => {
+    const results: ImportPhotosResponse['results'] = [];
+    let imported = 0;
+    let failed = 0;
+
+    streamSSE<ImportStreamEvent>(
+      API_ENDPOINTS.GOOGLE_PHOTOS_IMPORT_STREAM,
       { items, options },
-      { authenticated: true }
-    );
+      (event) => {
+        if (event.type === 'photo') {
+          // Update progress in Redux state
+          dispatch(updateImportProgress({
+            imported: event.imported,
+            failed: event.failed,
+            total: event.total,
+          }));
 
-    // Convert imported photos to Photo format and add to photos slice
-    if (response.imported > 0) {
-      // Refetch photos to get the newly imported ones
-      const photosResponse = await api.get<{ photos: Photo[] }>(API_ENDPOINTS.PHOTOS, {
-        authenticated: true,
-      });
-      // Get only the newly imported photos by their IDs
-      const importedPhotoIds = response.results
-        .filter((r) => r.success && r.photoId)
-        .map((r) => r.photoId!);
-      const newPhotos = photosResponse.photos.filter((p) => importedPhotoIds.includes(p.id));
-      if (newPhotos.length > 0) {
-        dispatch(addPhotos(newPhotos));
+          // Add result to our collection
+          results.push({
+            googlePhotoId: event.googlePhotoId,
+            success: event.success,
+            photoId: event.photoId,
+            error: event.error,
+          });
+
+          // If photo was imported successfully and we have the full photo data, add it immediately
+          if (event.success && event.photo) {
+            dispatch(addPhoto(event.photo as Photo));
+          }
+
+          imported = event.imported;
+          failed = event.failed;
+        } else if (event.type === 'complete') {
+          // All done
+          resolve({
+            results,
+            imported: event.imported,
+            failed: event.failed,
+          });
+        } else if (event.type === 'error') {
+          reject(new Error(event.error));
+        }
+      },
+      (error) => {
+        reject(error);
+      },
+      () => {
+        // If stream ends without complete event, resolve with what we have
+        if (results.length > 0) {
+          resolve({ results, imported, failed });
+        }
       }
-    }
-
-    return response;
-  } catch (error) {
+    ).catch(reject);
+  }).catch((error) => {
     return rejectWithValue(error instanceof Error ? error.message : 'Import failed');
-  }
+  }) as Promise<ImportPhotosResponse>;
 });
 
 const googlePhotosSlice = createSlice({
@@ -255,6 +285,9 @@ const googlePhotosSlice = createSlice({
       state.importStatus = 'idle';
       state.importError = null;
       state.importProgress = null;
+    },
+    updateImportProgress: (state, action: PayloadAction<{ imported: number; failed: number; total: number }>) => {
+      state.importProgress = action.payload;
     },
     resetPickerState: (state) => {
       state.pickerStatus = 'idle';
@@ -415,6 +448,7 @@ export const {
   selectAllPhotos,
   clearPhotoSelection,
   resetImportState,
+  updateImportProgress,
   resetPickerState,
   setConnectedFromCallback,
 } = googlePhotosSlice.actions;

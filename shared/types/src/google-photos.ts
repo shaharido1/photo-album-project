@@ -237,3 +237,51 @@ export const PickerSessionStatusSchema = z.object({
 });
 
 export type PickerSessionStatus = z.infer<typeof PickerSessionStatusSchema>;
+
+// =============================================================================
+// Streaming Import Types (SSE)
+// =============================================================================
+
+/**
+ * SSE event for a single photo import progress
+ */
+export const ImportPhotoProgressEventSchema = z.object({
+  type: z.literal('photo'),
+  googlePhotoId: z.string(),
+  success: z.boolean(),
+  photoId: z.string().optional(),
+  error: z.string().optional(),
+  imported: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  total: z.number().int().positive(),
+  photo: z.any().optional(), // Full photo object for immediate UI update
+});
+
+export type ImportPhotoProgressEvent = z.infer<typeof ImportPhotoProgressEventSchema>;
+
+/**
+ * SSE event for import completion
+ */
+export const ImportCompleteEventSchema = z.object({
+  type: z.literal('complete'),
+  imported: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  total: z.number().int().nonnegative(),
+});
+
+export type ImportCompleteEvent = z.infer<typeof ImportCompleteEventSchema>;
+
+/**
+ * SSE event for import error
+ */
+export const ImportErrorEventSchema = z.object({
+  type: z.literal('error'),
+  error: z.string(),
+});
+
+export type ImportErrorEvent = z.infer<typeof ImportErrorEventSchema>;
+
+/**
+ * Union of all import SSE events
+ */
+export type ImportStreamEvent = ImportPhotoProgressEvent | ImportCompleteEvent | ImportErrorEvent;

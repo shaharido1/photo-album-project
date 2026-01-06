@@ -1,28 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Plus, BookOpen, Clock, Layout, Image as ImageIcon, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, BookOpen, Clock, Layout, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
     fetchAlbums,
     selectAlbums,
     selectAlbumsStatus,
-    fetchAlbum
 } from '@/features/album/albumSlice';
-import { selectIsAuthenticated, selectUser } from '@/features/auth/authSlice';
+import { selectIsAuthenticated } from '@/features/auth/authSlice';
 import {
     checkGooglePhotosStatus
 } from '@/features/googlePhotos/googlePhotosSlice';
 import { CreateAlbumDialog } from '@/components/album/CreateAlbumDialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 
 export function LandingPage(): JSX.Element {
     const dispatch = useAppDispatch();
+    const navigate = useNavigate();
     const albums = useAppSelector(selectAlbums);
     const status = useAppSelector(selectAlbumsStatus);
     const isAuthenticated = useAppSelector(selectIsAuthenticated);
-    const user = useAppSelector(selectUser);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
     useEffect(() => {
@@ -33,7 +32,8 @@ export function LandingPage(): JSX.Element {
     }, [dispatch, isAuthenticated]);
 
     const handleOpenAlbum = (albumId: string) => {
-        dispatch(fetchAlbum(albumId));
+        // Navigate via URL - the useUrlSync hook will handle fetching
+        navigate(`/album/${albumId}`);
     };
 
 
